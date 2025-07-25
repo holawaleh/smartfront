@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Student Management</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header>
+    <h1>Student Dashboard</h1>
+    <button id="logout-btn">Logout</button>
+  </header>
+
+  <main>
+    <section class="controls">
+      <input type="text" id="search" placeholder="Search students..." />
+      <button id="add-btn">+ Add Student</button>
+    </section>
+
+    <section>
+      <table id="student-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">Name</th>
+            <th onclick="sortBy('matric')">Matric No</th>
+            <th onclick="sortBy('level')">Level</th>
+            <th onclick="sortBy('department')">Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="student-modal" class="modal hidden">
+    <form id="student-form" class="form modal-content">
+      <h2 id="modal-title">Add Student</h2>
+      <input type="text" id="name" placeholder="Full Name" required />
+      <input type="text" id="matric" placeholder="Matric Number" required />
+      <input type="text" id="level" placeholder="Level" required />
+      <input type="text" id="department" placeholder="Department" required />
+      <button type="submit">Save</button>
+      <button type="button" id="cancel-btn">Cancel</button>
+    </form>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
