@@ -1,55 +1,323 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-bs-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - Student Management</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Management System</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
 </head>
-
 <body>
-  <header>
-    <h1>Student Dashboard</h1>
-    <button id="logout-btn">Logout</button>
-  </header>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="dashboard.html">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Student Management System
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="students.html">
+                            <i class="fas fa-users me-1"></i>Students
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="subjects.html">
+                            <i class="fas fa-book me-1"></i>Subjects
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="logs.html">
+                            <i class="fas fa-clipboard-list me-1"></i>Scan Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="analytics.html">
+                            <i class="fas fa-chart-line me-1"></i>Analytics
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userDisplayName">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-  <main>
-    <section class="controls">
-      <input type="text" id="search" placeholder="Search students..." />
-      <button id="add-btn">+ Add Student</button>
-    </section>
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Dashboard Overview
+                </h2>
+            </div>
+        </div>
 
-    <section>
-      <table id="student-table">
-        <thead>
-          <tr>
-            <th onclick="sortBy('name')">Name</th>
-            <th onclick="sortBy('matric')">Matric No</th>
-            <th onclick="sortBy('level')">Level</th>
-            <th onclick="sortBy('department')">Department</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="totalStudents">0</h4>
+                                <p class="card-text">Total Students</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="totalSubjects">0</h4>
+                                <p class="card-text">Total Subjects</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-book fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="totalLogs">0</h4>
+                                <p class="card-text">Total Scan Logs</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clipboard-list fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="todayLogs">0</h4>
+                                <p class="card-text">Today's Scans</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-day fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <div id="student-modal" class="modal hidden">
-    <form id="student-form" class="form modal-content">
-      <h2 id="modal-title">Add Student</h2>
-      <input type="text" id="name" placeholder="Full Name" required />
-      <input type="text" id="matric" placeholder="Matric Number" required />
-      <input type="text" id="level" placeholder="Level" required />
-      <input type="text" id="department" placeholder="Department" required />
-      <button type="submit">Save</button>
-      <button type="button" id="cancel-btn">Cancel</button>
-    </form>
-  </div>
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <a href="students.html" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Add Student
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="subjects.html" class="btn btn-outline-success w-100">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Add Subject
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="logs.html" class="btn btn-outline-info w-100">
+                                    <i class="fas fa-list me-2"></i>
+                                    View Logs
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="analytics.html" class="btn btn-outline-warning w-100">
+                                    <i class="fas fa-chart-bar me-2"></i>
+                                    View Analytics
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <script src="auth.js"></script>
-  <script src="main.js"></script>
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Recent Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentActivity">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading recent activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Dashboard initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadDashboardData();
+        });
+
+        async function loadDashboardData() {
+            try {
+                // Load statistics
+                await Promise.all([
+                    loadStudentsCount(),
+                    loadSubjectsCount(),
+                    loadLogsCount(),
+                    loadRecentActivity()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function loadStudentsCount() {
+            try {
+                const response = await apiCall('/students', 'GET');
+                if (response.success && response.data) {
+                    const count = Array.isArray(response.data) ? response.data.length : 0;
+                    document.getElementById('totalStudents').textContent = count;
+                } else {
+                    document.getElementById('totalStudents').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading students count:', error);
+                document.getElementById('totalStudents').textContent = '0';
+            }
+        }
+
+        async function loadSubjectsCount() {
+            try {
+                const response = await apiCall('/subjects', 'GET');
+                if (response.success && response.data) {
+                    const count = Array.isArray(response.data) ? response.data.length : 0;
+                    document.getElementById('totalSubjects').textContent = count;
+                } else {
+                    document.getElementById('totalSubjects').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading subjects count:', error);
+                document.getElementById('totalSubjects').textContent = '0';
+            }
+        }
+
+        async function loadLogsCount() {
+            try {
+                const response = await apiCall('/logs', 'GET');
+                if (response.success && response.data) {
+                    const logs = Array.isArray(response.data) ? response.data : [];
+                    const total = logs.length;
+                    document.getElementById('totalLogs').textContent = total;
+                    
+                    // Count today's logs
+                    const today = new Date().toDateString();
+                    const todayLogs = logs.filter(log => 
+                        log.timestamp && new Date(log.timestamp).toDateString() === today
+                    );
+                    document.getElementById('todayLogs').textContent = todayLogs.length;
+                } else {
+                    document.getElementById('totalLogs').textContent = '0';
+                    document.getElementById('todayLogs').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading logs count:', error);
+                document.getElementById('totalLogs').textContent = '0';
+                document.getElementById('todayLogs').textContent = '0';
+            }
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const response = await apiCall('/logs', 'GET');
+                const container = document.getElementById('recentActivity');
+                
+                if (response.success && response.data && response.data.length > 0) {
+                    const recentLogs = response.data
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        .slice(0, 5);
+                    
+                    container.innerHTML = recentLogs.map(log => `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <div>
+                                <strong>${log.studentName || 'Unknown Student'}</strong> scanned for 
+                                <span class="text-primary">${log.subject || 'Unknown Subject'}</span>
+                            </div>
+                            <small class="text-muted">${formatDateTime(log.timestamp)}</small>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">No recent activity found</p>';
+                }
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+                document.getElementById('recentActivity').innerHTML = 
+                    '<p class="text-danger text-center">Error loading recent activity</p>';
+            }
+        }
+    </script>
 </body>
-
 </html>
