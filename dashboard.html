@@ -5,14 +5,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Student Management System</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .stats-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .quick-action-btn {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .activity-item {
+            transition: background-color 0.2s ease;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .activity-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .loading-spinner {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-container {
+            max-width: 500px;
+        }
+    </style>
 </head>
 
-<script src="js/auth.js"></script>
+<body class="protected">
+    <!-- Alert Container -->
+    <div id="alertContainer" class="position-fixed top-0 start-50 translate-middle-x alert-container"
+        style="z-index: 9999; margin-top: 20px;"></div>
 
-<body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
@@ -84,64 +148,80 @@
 
         <!-- Stats Cards -->
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white stats-card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="card-title" id="totalStudents">0</h4>
-                                <p class="card-text">Total Students</p>
+                                <h4 class="card-title" id="totalStudents">
+                                    <div class="spinner-border spinner-border-sm loading-spinner" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </h4>
+                                <p class="card-text mb-0">Total Students</p>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-users fa-2x"></i>
+                                <i class="fas fa-users fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white stats-card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="card-title" id="totalSubjects">0</h4>
-                                <p class="card-text">Total Subjects</p>
+                                <h4 class="card-title" id="totalSubjects">
+                                    <div class="spinner-border spinner-border-sm loading-spinner" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </h4>
+                                <p class="card-text mb-0">Total Subjects</p>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-book fa-2x"></i>
+                                <i class="fas fa-book fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white stats-card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="card-title" id="totalLogs">0</h4>
-                                <p class="card-text">Total Scan Logs</p>
+                                <h4 class="card-title" id="totalLogs">
+                                    <div class="spinner-border spinner-border-sm loading-spinner" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </h4>
+                                <p class="card-text mb-0">Total Scan Logs</p>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-clipboard-list fa-2x"></i>
+                                <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-dark stats-card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="card-title" id="todayLogs">0</h4>
-                                <p class="card-text">Today's Scans</p>
+                                <h4 class="card-title" id="todayLogs">
+                                    <div class="spinner-border spinner-border-sm loading-spinner" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </h4>
+                                <p class="card-text mb-0">Today's Scans</p>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-calendar-day fa-2x"></i>
+                                <i class="fas fa-calendar-day fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
@@ -160,27 +240,27 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 mb-2">
-                                <a href="students.html" class="btn btn-outline-primary w-100">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <a href="students.html" class="btn btn-outline-primary w-100 quick-action-btn">
                                     <i class="fas fa-user-plus me-2"></i>
                                     Add Student
                                 </a>
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <a href="subjects.html" class="btn btn-outline-success w-100">
+                            <div class="col-md-3">
+                                <a href="subjects.html" class="btn btn-outline-success w-100 quick-action-btn">
                                     <i class="fas fa-plus me-2"></i>
                                     Add Subject
                                 </a>
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <a href="logs.html" class="btn btn-outline-info w-100">
+                            <div class="col-md-3">
+                                <a href="logs.html" class="btn btn-outline-info w-100 quick-action-btn">
                                     <i class="fas fa-list me-2"></i>
                                     View Logs
                                 </a>
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <a href="analytics.html" class="btn btn-outline-warning w-100">
+                            <div class="col-md-3">
+                                <a href="analytics.html" class="btn btn-outline-warning w-100 quick-action-btn">
                                     <i class="fas fa-chart-bar me-2"></i>
                                     View Analytics
                                 </a>
@@ -195,19 +275,22 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-clock me-2"></i>
                             Recent Activity
                         </h5>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadRecentActivity()" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
                     </div>
                     <div class="card-body">
                         <div id="recentActivity">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
+                            <div class="text-center py-4">
+                                <div class="spinner-border loading-spinner" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <p class="mt-2">Loading recent activity...</p>
+                                <p class="mt-2 text-muted">Loading recent activity...</p>
                             </div>
                         </div>
                     </div>
@@ -216,9 +299,84 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/app.js"></script>
     <script>
+        // Mock auth functions for demo (replace with your actual auth.js)
+        function checkAuth() {
+            console.log('Checking authentication...');
+        }
+
+        function logout() {
+            console.log('Logging out...');
+        }
+
+        // Mock API call function (replace with your actual implementation)
+        async function apiCall(endpoint, method, data = null) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+
+            // Mock data based on endpoint
+            switch (endpoint) {
+                case '/students':
+                    return Array.from({ length: 156 }, (_, i) => ({ id: i + 1, name: `Student ${i + 1}` }));
+                case '/subjects':
+                    return Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Subject ${i + 1}` }));
+                case '/logs':
+                    return Array.from({ length: 1248 }, (_, i) => ({
+                        id: i + 1,
+                        studentName: `Student ${Math.floor(Math.random() * 156) + 1}`,
+                        action: 'scanned',
+                        details: `Subject ${Math.floor(Math.random() * 12) + 1}`,
+                        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+                    }));
+                default:
+                    return [];
+            }
+        }
+
+        // Alert function (replace with your actual implementation)
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Utility function to format date/time
+        function formatDateTime(timestamp) {
+            if (!timestamp) return 'Unknown time';
+
+            try {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+
+                return date.toLocaleDateString();
+            } catch (error) {
+                return 'Invalid date';
+            }
+        }
+
         // Dashboard initialization
         document.addEventListener('DOMContentLoaded', function () {
             checkAuth();
@@ -227,7 +385,6 @@
 
         async function loadDashboardData() {
             try {
-                // Load statistics
                 await Promise.all([
                     loadStudentsCount(),
                     loadSubjectsCount(),
@@ -236,91 +393,136 @@
                 ]);
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
+                showAlert('Error loading dashboard data: ' + error.message, 'danger');
             }
         }
 
         async function loadStudentsCount() {
             try {
                 const response = await apiCall('/students', 'GET');
-                if (response.success && response.data) {
-                    const count = Array.isArray(response.data) ? response.data.length : 0;
-                    document.getElementById('totalStudents').textContent = count;
-                } else {
-                    document.getElementById('totalStudents').textContent = '0';
-                }
+                const data = Array.isArray(response) ? response : (response.data || response);
+                const count = Array.isArray(data) ? data.length : (data.length || 0);
+                document.getElementById('totalStudents').textContent = count.toLocaleString();
             } catch (error) {
                 console.error('Error loading students count:', error);
-                document.getElementById('totalStudents').textContent = '0';
+                document.getElementById('totalStudents').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                showAlert('Failed to load student count', 'warning');
             }
         }
 
         async function loadSubjectsCount() {
             try {
                 const response = await apiCall('/subjects', 'GET');
-                if (response.success && response.data) {
-                    const count = Array.isArray(response.data) ? response.data.length : 0;
-                    document.getElementById('totalSubjects').textContent = count;
-                } else {
-                    document.getElementById('totalSubjects').textContent = '0';
-                }
+                const data = Array.isArray(response) ? response : (response.data || response);
+                const count = Array.isArray(data) ? data.length : (data.length || 0);
+                document.getElementById('totalSubjects').textContent = count.toLocaleString();
             } catch (error) {
                 console.error('Error loading subjects count:', error);
-                document.getElementById('totalSubjects').textContent = '0';
+                document.getElementById('totalSubjects').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                showAlert('Failed to load subject count', 'warning');
             }
         }
 
         async function loadLogsCount() {
             try {
                 const response = await apiCall('/logs', 'GET');
-                if (response.success && response.data) {
-                    const logs = Array.isArray(response.data) ? response.data : [];
-                    const total = logs.length;
-                    document.getElementById('totalLogs').textContent = total;
+                const data = Array.isArray(response) ? response : (response.data || response);
+                const logs = Array.isArray(data) ? data : [];
 
-                    // Count today's logs
-                    const today = new Date().toDateString();
-                    const todayLogs = logs.filter(log =>
-                        log.timestamp && new Date(log.timestamp).toDateString() === today
-                    );
-                    document.getElementById('todayLogs').textContent = todayLogs.length;
-                } else {
-                    document.getElementById('totalLogs').textContent = '0';
-                    document.getElementById('todayLogs').textContent = '0';
-                }
+                const total = logs.length;
+                document.getElementById('totalLogs').textContent = total.toLocaleString();
+
+                // Count today's logs
+                const today = new Date().toDateString();
+                const todayLogs = logs.filter(log => {
+                    const logDate = log.createdAt || log.timestamp || log.date;
+                    return logDate && new Date(logDate).toDateString() === today;
+                });
+                document.getElementById('todayLogs').textContent = todayLogs.length.toLocaleString();
             } catch (error) {
                 console.error('Error loading logs count:', error);
-                document.getElementById('totalLogs').textContent = '0';
-                document.getElementById('todayLogs').textContent = '0';
+                document.getElementById('totalLogs').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                document.getElementById('todayLogs').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                showAlert('Failed to load log counts', 'warning');
             }
         }
 
         async function loadRecentActivity() {
+            const container = document.getElementById('recentActivity');
+
+            // Show loading state
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border loading-spinner" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading recent activity...</p>
+                </div>
+            `;
+
             try {
                 const response = await apiCall('/logs', 'GET');
-                const container = document.getElementById('recentActivity');
+                const data = Array.isArray(response) ? response : (response.data || response);
+                const logs = Array.isArray(data) ? data : [];
 
-                if (response.success && response.data && response.data.length > 0) {
-                    const recentLogs = response.data
-                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                        .slice(0, 5);
+                if (logs.length > 0) {
+                    const recentLogs = logs
+                        .sort((a, b) => {
+                            const dateA = new Date(a.createdAt || a.timestamp || a.date || 0);
+                            const dateB = new Date(b.createdAt || b.timestamp || b.date || 0);
+                            return dateB - dateA;
+                        })
+                        .slice(0, 10); // Show more recent activities
 
                     container.innerHTML = recentLogs.map(log => `
-                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                            <div>
-                                <strong>${log.studentName || 'Unknown Student'}</strong> scanned for 
-                                <span class="text-primary">${log.subject || 'Unknown Subject'}</span>
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                                        <strong>${getStudentName(log)}</strong>
+                                        <span class="text-muted ms-2">${log.action || 'scanned'}</span>
+                                    </div>
+                                    ${log.details ? `<div class="text-muted small ms-4">${log.details}</div>` : ''}
+                                </div>
+                                <small class="text-muted ms-3 flex-shrink-0">
+                                    ${formatDateTime(log.createdAt || log.timestamp || log.date)}
+                                </small>
                             </div>
-                            <small class="text-muted">${formatDateTime(log.timestamp)}</small>
                         </div>
                     `).join('');
                 } else {
-                    container.innerHTML = '<p class="text-muted text-center">No recent activity found</p>';
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No recent activity found</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadRecentActivity()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Error loading recent activity:', error);
-                document.getElementById('recentActivity').innerHTML =
-                    '<p class="text-danger text-center">Error loading recent activity</p>';
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+                        <p class="text-danger">Error loading recent activity</p>
+                        <button class="btn btn-outline-danger btn-sm" onclick="loadRecentActivity()">
+                            <i class="fas fa-redo me-1"></i>Try Again
+                        </button>
+                    </div>
+                `;
+                showAlert('Failed to load recent activity', 'danger');
             }
+        }
+
+        // Helper function to get student name from log
+        function getStudentName(log) {
+            return log.studentName ||
+                (log.student && log.student.name) ||
+                log.user?.username ||
+                'Unknown Student';
         }
     </script>
 </body>

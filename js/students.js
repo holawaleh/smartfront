@@ -1,10 +1,11 @@
 // Students management JavaScript
+// This file depends on auth.js being loaded first
 
 let studentsData = [];
 let currentEditingStudent = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    checkAuth();
+    checkAuth(); // This function comes from auth.js
     initializeStudentsPage();
 });
 
@@ -68,27 +69,32 @@ async function loadStudents() {
             </tr>
         `;
         
+        // Use apiCall from auth.js
         const response = await apiCall('/students', 'GET');
         
-        if (response.success) {
-            studentsData = response.data || [];
+        if (response && !response.success === false) {
+            // Handle the response based on your API structure
+            studentsData = Array.isArray(response) ? response : (response.data || []);
             displayStudents(studentsData);
         } else {
-            throw new Error(response.error || 'Failed to load students');
+            throw new Error(response?.message || 'Failed to load students');
         }
         
     } catch (error) {
         console.error('Error loading students:', error);
         showAlert('Error loading students: ' + error.message, 'danger');
         
-        document.getElementById('studentsTableBody').innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center text-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Error loading students
-                </td>
-            </tr>
-        `;
+        const tableBody = document.getElementById('studentsTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading students
+                    </td>
+                </tr>
+            `;
+        }
     }
 }
 
@@ -123,12 +129,12 @@ function displayStudents(students) {
             <td>
                 <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-primary" 
-                            onclick="editStudent('${student.id}')" 
+                            onclick="editStudent('${student._id || student.id}')" 
                             title="Edit Student">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button type="button" class="btn btn-outline-danger" 
-                            onclick="deleteStudent('${student.id}', '${escapeHtml(student.name)}')" 
+                            onclick="deleteStudent('${student._id || student.id}', '${escapeHtml(student.name)}')" 
                             title="Delete Student">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -146,36 +152,36 @@ async function handleAddStudent(event) {
         return;
     }
     
-    const formData = getFormData('addStudentForm');
+    const formData = getFormData('addStudentForm'); // This function comes from auth.js
     const saveBtn = document.getElementById('saveStudentBtn');
     const saveSpinner = document.getElementById('saveSpinner');
     
-    setLoading('saveStudentBtn', true);
-    saveSpinner.classList.remove('d-none');
+    setLoading('saveStudentBtn', true, 'Saving...'); // This function comes from auth.js
+    if (saveSpinner) saveSpinner.classList.remove('d-none');
     
     try {
-        const response = await apiCall('/students', 'POST', formData);
+        const response = await apiCall('/students', 'POST', formData); // This function comes from auth.js
         
-        if (response.success) {
+        if (response && !response.success === false) {
             showAlert('Student added successfully!', 'success');
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
-            modal.hide();
+            if (modal) modal.hide();
             
             // Reload students
             await loadStudents();
             
         } else {
-            throw new Error(response.error || 'Failed to add student');
+            throw new Error(response?.message || 'Failed to add student');
         }
         
     } catch (error) {
         console.error('Error adding student:', error);
         showAlert('Error adding student: ' + error.message, 'danger');
     } finally {
-        setLoading('saveStudentBtn', false);
-        saveSpinner.classList.add('d-none');
+        setLoading('saveStudentBtn', false, 'Save Student');
+        if (saveSpinner) saveSpinner.classList.add('d-none');
     }
 }
 
@@ -193,37 +199,37 @@ async function handleEditStudent(event) {
     const updateBtn = document.getElementById('updateStudentBtn');
     const updateSpinner = document.getElementById('updateSpinner');
     
-    setLoading('updateStudentBtn', true);
-    updateSpinner.classList.remove('d-none');
+    setLoading('updateStudentBtn', true, 'Updating...');
+    if (updateSpinner) updateSpinner.classList.remove('d-none');
     
     try {
         const response = await apiCall(`/students/${studentId}`, 'PUT', formData);
         
-        if (response.success) {
+        if (response && !response.success === false) {
             showAlert('Student updated successfully!', 'success');
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
-            modal.hide();
+            if (modal) modal.hide();
             
             // Reload students
             await loadStudents();
             
         } else {
-            throw new Error(response.error || 'Failed to update student');
+            throw new Error(response?.message || 'Failed to update student');
         }
         
     } catch (error) {
         console.error('Error updating student:', error);
         showAlert('Error updating student: ' + error.message, 'danger');
     } finally {
-        setLoading('updateStudentBtn', false);
-        updateSpinner.classList.add('d-none');
+        setLoading('updateStudentBtn', false, 'Update Student');
+        if (updateSpinner) updateSpinner.classList.add('d-none');
     }
 }
 
 function editStudent(studentId) {
-    const student = studentsData.find(s => s.id === studentId);
+    const student = studentsData.find(s => (s._id || s.id) === studentId);
     if (!student) {
         showAlert('Student not found!', 'danger');
         return;
@@ -247,11 +253,11 @@ async function deleteStudent(studentId, studentName) {
     try {
         const response = await apiCall(`/students/${studentId}`, 'DELETE');
         
-        if (response.success) {
+        if (response && !response.success === false) {
             showAlert('Student deleted successfully!', 'success');
             await loadStudents();
         } else {
-            throw new Error(response.error || 'Failed to delete student');
+            throw new Error(response?.message || 'Failed to delete student');
         }
         
     } catch (error) {
@@ -264,19 +270,21 @@ async function captureLatestUid() {
     const captureBtn = document.getElementById('captureUidBtn');
     const uidField = document.getElementById('uid');
     
+    if (!captureBtn || !uidField) return;
+    
     // Set loading state
     captureBtn.disabled = true;
     captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
     
     try {
-        // Try the endpoint you mentioned for getting latest UID
-        const response = await apiCall('/get-latest-uid', 'GET', null, false);
+        // Try the endpoint for getting latest UID
+        const response = await apiCall('/get-latest-uid', 'GET');
         
-        if (response.success && response.data && response.data.uid) {
-            uidField.value = response.data.uid;
+        if (response && response.uid) {
+            uidField.value = response.uid;
             showAlert('UID captured successfully!', 'success');
         } else {
-            // If that doesn't work, generate a temporary UID for testing
+            // Generate a temporary UID for testing
             const tempUid = 'UID' + Date.now().toString().slice(-8);
             uidField.value = tempUid;
             showAlert('Generated temporary UID for testing. Please ensure your hardware is connected.', 'warning');
@@ -292,6 +300,41 @@ async function captureLatestUid() {
         // Reset button state
         captureBtn.disabled = false;
         captureBtn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
+    }
+}
+
+// Additional utility functions not in auth.js
+function validateForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return false;
+    
+    const requiredFields = form.querySelectorAll('[required]');
+    for (let field of requiredFields) {
+        if (!field.value.trim()) {
+            field.focus();
+            showAlert(`Please fill in the ${field.name || 'required'} field.`, 'danger');
+            return false;
+        }
+    }
+    return true;
+}
+
+function populateForm(formId, data) {
+    const form = document.getElementById(formId);
+    if (!form || !data) return;
+    
+    Object.keys(data).forEach(key => {
+        const field = form.querySelector(`[name="${key}"], #${key}`);
+        if (field) {
+            field.value = data[key] || '';
+        }
+    });
+}
+
+function clearForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        form.reset();
     }
 }
 
