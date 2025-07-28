@@ -1,6 +1,5 @@
 // Students management JavaScript
-// Updated to work with https://bravetosmart.onrender.com/api/
-// Configuration
+// Updated to work with https://bravetosmart.onrender.com/api/students
 const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 let studentsData = [];
 let currentEditingStudent = null;
@@ -35,7 +34,7 @@ function logout() {
 async function apiCall(endpoint, method = 'GET', data = null) {
     const token = getAuthToken();
     const config = {
-        method: method,
+        method,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -47,7 +46,6 @@ async function apiCall(endpoint, method = 'GET', data = null) {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         if (response.status === 401) {
-            // Token expired or invalid
             logout();
             return null;
         }
@@ -56,13 +54,10 @@ async function apiCall(endpoint, method = 'GET', data = null) {
             try {
                 const errorData = await response.json();
                 errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-                // Ignore
-            }
+            } catch (e) {}
             throw new Error(errorMessage);
         }
-        const result = await response.json();
-        return result;
+        return await response.json();
     } catch (error) {
         console.error('API call error:', error);
         throw error;
@@ -83,12 +78,7 @@ function showAlert(message, type = 'info') {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     alertContainer.appendChild(alert);
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.remove();
-        }
-    }, 5000);
+    setTimeout(() => alert.remove(), 5000);
 }
 
 // Utility functions
@@ -98,7 +88,7 @@ function setLoading(buttonId, isLoading, loadingText = 'Loading...') {
     if (isLoading) {
         button.disabled = true;
         button.dataset.originalText = button.textContent;
-        button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${loadingText}`;
+        button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${loadingText}`;
     } else {
         button.disabled = false;
         button.textContent = button.dataset.originalText || 'Submit';
@@ -139,9 +129,7 @@ function setupEventListeners() {
 
     const addStudentModal = document.getElementById('addStudentModal');
     if (addStudentModal) {
-        addStudentModal.addEventListener('hidden.bs.modal', () => {
-            clearForm('addStudentForm');
-        });
+        addStudentModal.addEventListener('hidden.bs.modal', () => clearForm('addStudentForm'));
     }
 
     const editStudentModal = document.getElementById('editStudentModal');
@@ -153,7 +141,7 @@ function setupEventListeners() {
     }
 }
 
-// ✅ Fixed: Use GET / to load all students
+// ✅ Fixed: Uses GET /api/students
 async function loadStudents() {
     try {
         const tableBody = document.getElementById('studentsTableBody');
@@ -161,26 +149,15 @@ async function loadStudents() {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center">
-                        <div class="spinner-border" role="status"></div>
-                        <p class="mt-2">Loading students...</p>
+                        <div class="spinner-border"></div> Loading students...
                     </td>
                 </tr>
             `;
         }
 
-        // ✅ Correct endpoint: GET /
-        const response = await apiCall('/', 'GET');
+        const response = await apiCall('/students', 'GET');
 
-        if (Array.isArray(response)) {
-            studentsData = response;
-        } else if (response && Array.isArray(response.data)) {
-            studentsData = response.data;
-        } else if (response?.students && Array.isArray(response.students)) {
-            studentsData = response.students;
-        } else {
-            throw new Error('Invalid data format from server');
-        }
-
+        studentsData = Array.isArray(response) ? response : response.data || [];
         displayStudents(studentsData);
     } catch (error) {
         console.error('Error loading students:', error);
@@ -190,8 +167,7 @@ async function loadStudents() {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center text-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Load failed: ${error.message}
+                        <i class="fas fa-exclamation-triangle"></i> Load failed
                     </td>
                 </tr>
             `;
@@ -203,41 +179,32 @@ function displayStudents(students) {
     const tableBody = document.getElementById('studentsTableBody');
     if (!tableBody) return;
 
-    if (!students || students.length === 0) {
+    if (!students.length) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="8" class="text-center text-muted">
-                    <i class="fas fa-users me-2"></i>
-                    No students found
+                    <i class="fas fa-users"></i> No students found
                 </td>
             </tr>
         `;
         return;
     }
 
-    tableBody.innerHTML = students.map(student => `
+    tableBody.innerHTML = students.map(s => `
         <tr>
-            <td>${escapeHtml(student.name || '')}</td>
-            <td>${escapeHtml(student.matricNo || student.matricNumber || '')}</td>
-            <td>${escapeHtml(student.email || '')}</td>
-            <td>${escapeHtml(student.level || '')}</td>
-            <td>${escapeHtml(student.phone || student.phoneNumber || '')}</td>
-            <td>${escapeHtml(student.department || '')}</td>
+            <td>${escapeHtml(s.name || '')}</td>
+            <td>${escapeHtml(s.matricNo || s.matricNumber || '')}</td>
+            <td>${escapeHtml(s.email || '')}</td>
+            <td>${escapeHtml(s.level || '')}</td>
+            <td>${escapeHtml(s.phone || s.phoneNumber || '')}</td>
+            <td>${escapeHtml(s.department || '')}</td>
+            <td><span class="badge bg-secondary">${escapeHtml(s.uid || 'Not Set')}</span></td>
             <td>
-                <span class="badge bg-secondary">
-                    ${escapeHtml(student.uid || 'Not Set')}
-                </span>
-            </td>
-            <td>
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary" 
-                            onclick="editStudent('${student._id || student.id}')" 
-                            title="Edit Student">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="editStudent('${s._id}')" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-danger" 
-                            onclick="deleteStudent('${student._id || student.id}', '${escapeHtml(student.name || '')}')" 
-                            title="Delete Student">
+                    <button class="btn btn-outline-danger" onclick="deleteStudent('${s._id}', '${escapeHtml(s.name || '')}')" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -246,119 +213,98 @@ function displayStudents(students) {
     `).join('');
 }
 
-// ✅ Uses POST /register
+// ✅ Fixed: Use POST /api/students/register
 async function handleAddStudent(event) {
     event.preventDefault();
     if (!validateForm('addStudentForm')) {
-        showAlert('Please fill in all required fields correctly.', 'danger');
+        showAlert('Please fill all required fields.', 'danger');
         return;
     }
     const formData = getFormData('addStudentForm');
     setLoading('saveStudentBtn', true, 'Saving...');
 
     try {
-        const response = await apiCall('/register', 'POST', formData);
+        const response = await apiCall('/students/register', 'POST', formData);
         if (response) {
-            showAlert('Student registered successfully!', 'success');
+            showAlert('Student registered!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
             if (modal) modal.hide();
             await loadStudents();
-        } else {
-            throw new Error('Registration failed');
         }
     } catch (error) {
-        console.error('Error registering student:', error);
-        showAlert('Error: ' + error.message, 'danger');
+        showAlert('Register failed: ' + error.message, 'danger');
     } finally {
         setLoading('saveStudentBtn', false, 'Save Student');
     }
 }
 
-// ✅ Uses PUT /students/:id (ensure backend supports this)
+// ✅ Uses PUT /students/:id
 async function handleEditStudent(event) {
     event.preventDefault();
     if (!validateForm('editStudentForm')) {
-        showAlert('Please fill in all required fields correctly.', 'danger');
+        showAlert('Please fill all fields correctly.', 'danger');
         return;
     }
     const formData = getFormData('editStudentForm');
-    const studentId = formData.id || currentEditingStudent?._id || currentEditingStudent?.id;
-    if (!studentId) {
-        showAlert('Student ID not found', 'danger');
-        return;
-    }
+    const id = formData.id || currentEditingStudent?._id;
+    if (!id) return showAlert('Student ID missing', 'danger');
 
     setLoading('updateStudentBtn', true, 'Updating...');
     try {
-        const response = await apiCall(`/students/${studentId}`, 'PUT', formData);
-        if (response) {
-            showAlert('Student updated successfully!', 'success');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
-            if (modal) modal.hide();
-            await loadStudents();
-        } else {
-            throw new Error('Update failed');
-        }
+        await apiCall(`/students/${id}`, 'PUT', formData);
+        showAlert('Updated successfully!', 'success');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
+        if (modal) modal.hide();
+        await loadStudents();
     } catch (error) {
-        console.error('Error updating student:', error);
         showAlert('Update failed: ' + error.message, 'danger');
     } finally {
         setLoading('updateStudentBtn', false, 'Update Student');
     }
 }
 
-function editStudent(studentId) {
-    const student = studentsData.find(s => (s._id || s.id) === studentId);
-    if (!student) {
-        showAlert('Student not found!', 'danger');
-        return;
-    }
+function editStudent(id) {
+    const student = studentsData.find(s => s._id === id);
+    if (!student) return showAlert('Not found', 'danger');
     currentEditingStudent = student;
     populateForm('editStudentForm', student);
-    const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('editStudentModal')).show();
 }
 
-// ✅ Uses DELETE /students/:id (ensure backend supports this)
-async function deleteStudent(studentId, studentName) {
-    if (!confirm(`Delete "${studentName}"? This cannot be undone.`)) return;
+// ✅ Uses DELETE /students/:id
+async function deleteStudent(id, name) {
+    if (!confirm(`Delete "${name}"?`)) return;
     try {
-        const response = await apiCall(`/students/${studentId}`, 'DELETE');
-        if (response) {
-            showAlert('Student deleted!', 'success');
-            await loadStudents();
-        } else {
-            throw new Error('Delete failed');
-        }
+        await apiCall(`/students/${id}`, 'DELETE');
+        showAlert('Deleted!', 'success');
+        await loadStudents();
     } catch (error) {
-        console.error('Error deleting student:', error);
         showAlert('Delete failed: ' + error.message, 'danger');
     }
 }
 
-// ✅ Correct: GET /students/get-latest-uid
+// ✅ Uses GET /students/get-latest-uid
 async function captureLatestUid() {
-    const captureBtn = document.getElementById('captureUidBtn');
-    const uidField = document.getElementById('uid');
-    if (!captureBtn || !uidField) return;
+    const btn = document.getElementById('captureUidBtn');
+    const field = document.getElementById('uid');
+    if (!btn || !field) return;
 
-    captureBtn.disabled = true;
-    captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
 
     try {
-        const response = await apiCall('/students/get-latest-uid', 'GET');
-        if (response && response.uid) {
-            uidField.value = response.uid;
-            showAlert('UID captured: ' + response.uid, 'success');
+        const res = await apiCall('/students/get-latest-uid', 'GET');
+        if (res?.uid) {
+            field.value = res.uid;
+            showAlert('UID: ' + res.uid, 'success');
         } else {
-            showAlert('No UID available. Tap a card.', 'info');
+            showAlert('No UID scanned yet.', 'info');
         }
     } catch (error) {
-        console.error('Error capturing UID:', error);
-        showAlert('Failed to get UID. Check connection.', 'warning');
+        showAlert('Failed to get UID.', 'warning');
     } finally {
-        captureBtn.disabled = false;
-        captureBtn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
     }
 }
 
@@ -366,22 +312,16 @@ async function captureLatestUid() {
 function validateForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return false;
-    const requiredFields = form.querySelectorAll('[required]');
-    for (let field of requiredFields) {
-        if (!field.value.trim()) {
-            field.focus();
-            const name = field.getAttribute('name') || field.id || 'this field';
-            showAlert(`Please fill in ${name}.`, 'danger');
+    const req = form.querySelectorAll('[required]');
+    for (let f of req) {
+        if (!f.value.trim()) {
+            f.focus();
+            showAlert(`Fill ${f.name || f.id}`, 'danger');
             return false;
         }
-        if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
-            field.focus();
-            showAlert('Enter a valid email.', 'danger');
-            return false;
-        }
-        if ((field.name === 'phone' || field.name === 'phoneNumber') && !/^[\d\s\-\+\(\)]{10,}$/.test(field.value.trim())) {
-            field.focus();
-            showAlert('Enter a valid phone number.', 'danger');
+        if (f.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.value)) {
+            f.focus();
+            showAlert('Valid email required', 'danger');
             return false;
         }
     }
@@ -393,34 +333,24 @@ function populateForm(formId, data) {
     if (!form || !data) return;
     Object.keys(data).forEach(key => {
         let field = form.querySelector(`[name="${key}"]`) || form.querySelector(`#${key}`);
-        if (!field && key === 'matricNo') {
-            field = form.querySelector('[name="matricNumber"]') || form.querySelector('#matricNumber');
-        } else if (!field && key === 'phoneNumber') {
-            field = form.querySelector('[name="phone"]') || form.querySelector('#phone');
-        }
+        if (!field && key === 'matricNo') field = form.querySelector('[name="matricNumber"]');
         if (field) field.value = data[key] || '';
     });
     const idField = form.querySelector('[name="id"]') || form.querySelector('#id');
-    if (idField) idField.value = data._id || data.id || '';
+    if (idField) idField.value = data._id || '';
 }
 
 function clearForm(formId) {
     const form = document.getElementById(formId);
-    if (form) {
-        form.reset();
-        form.querySelectorAll('.is-invalid, .is-valid').forEach(f => f.classList.remove('is-invalid', 'is-valid'));
-    }
+    if (form) form.reset();
 }
 
 // Search & Filter
-function searchStudents(term) {
-    if (!term) return displayStudents(studentsData);
-    const filtered = studentsData.filter(s =>
-        (s.name || '').toLowerCase().includes(term.toLowerCase()) ||
-        (s.matricNo || '').includes(term) ||
-        (s.email || '').toLowerCase().includes(term.toLowerCase())
-    );
-    displayStudents(filtered);
+function searchStudents(q) {
+    displayStudents(!q ? studentsData : studentsData.filter(s =>
+        s.name?.toLowerCase().includes(q.toLowerCase()) ||
+        s.matricNo?.includes(q)
+    ));
 }
 
 function filterStudentsByLevel(level) {
@@ -428,23 +358,25 @@ function filterStudentsByLevel(level) {
 }
 
 function filterStudentsByDepartment(dept) {
-    displayStudents(dept ? studentsData.filter(s => (s.department || '').toLowerCase().includes(dept.toLowerCase())) : studentsData);
+    displayStudents(dept ? studentsData.filter(s => s.department?.toLowerCase().includes(dept.toLowerCase())) : studentsData);
 }
 
-// Export to CSV
+// Export CSV
 function exportStudentsToCSV() {
-    if (!studentsData.length) return showAlert('No data to export.', 'warning');
-    const headers = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
-    const rows = studentsData.map(s => [
-        s.name || '',
-        s.matricNo || '',
-        s.email || '',
-        s.level || '',
-        s.phone || '',
-        s.department || '',
-        s.uid || ''
-    ]);
-    const csv = [headers, ...rows].map(r => r.map(f => `"${f.replace(/"/g, '""')}"`).join(',')).join('\n');
+    if (!studentsData.length) return showAlert('No data', 'warning');
+    const csv = [
+        ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'],
+        ...studentsData.map(s => [
+            s.name || '',
+            s.matricNo || '',
+            s.email || '',
+            s.level || '',
+            s.phone || '',
+            s.department || '',
+            s.uid || ''
+        ])
+    ].map(r => r.map(f => `"${f.replace(/"/g, '""')}"`).join(',')).join('\n');
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -452,25 +384,11 @@ function exportStudentsToCSV() {
     a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showAlert('Exported successfully!', 'success');
+    showAlert('Exported!', 'success');
 }
 
 // Utility
-function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#039;' };
-    return text?.toString().replace(/[&<>"']/g, m => map[m]) || '';
-}
-
-// Helpers
-function refreshStudents() { loadStudents(); }
-function getStudentById(id) { return studentsData.find(s => s._id === id); }
-async function bulkDelete(ids) {
-    if (!ids.length || !confirm(`Delete ${ids.length} student(s)?`)) return;
-    try {
-        await Promise.all(ids.map(id => apiCall(`/students/${id}`, 'DELETE')));
-        showAlert('Deleted!', 'success');
-        await loadStudents();
-    } catch (e) {
-        showAlert('Bulk delete failed: ' + e.message, 'danger');
-    }
+function escapeHtml(s) {
+    const m = { '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#039;' };
+    return String(s || '').replace(/[&<>"']/g, m => m[m]);
 }
