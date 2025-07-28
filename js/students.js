@@ -285,26 +285,31 @@ async function deleteStudent(id, name) {
 
 // ✅ Uses GET /students/get-latest-uid
 async function captureLatestUid() {
-    const btn = document.getElementById('captureUidBtn');
-    const field = document.getElementById('uid');
-    if (!btn || !field) return;
+    const captureBtn = document.getElementById('captureUidBtn');
+    const uidField = document.getElementById('uid');
+    if (!captureBtn || !uidField) return;
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
+    // Set loading state
+    captureBtn.disabled = true;
+    captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
 
     try {
-        const res = await apiCall('/students/get-latest-uid', 'GET');
-        if (res?.uid) {
-            field.value = res.uid;
-            showAlert('UID: ' + res.uid, 'success');
+        // Correct endpoint: GET /students/get-latest-uid
+        const response = await apiCall('/students/get-latest-uid', 'GET');
+
+        if (response && response.uid) {
+            uidField.value = response.uid;
+            showAlert('UID captured successfully!', 'success');
         } else {
-            showAlert('No UID scanned yet.', 'info');
+            showAlert('No UID available. Tap a card to capture.', 'info');
         }
     } catch (error) {
-        showAlert('Failed to get UID.', 'warning');
+        console.error('Error capturing UID:', error);
+        showAlert('Could not capture UID. Please check backend or enter manually.', 'warning');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
+        // Reset button state
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
     }
 }
 
