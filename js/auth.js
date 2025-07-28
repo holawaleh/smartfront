@@ -132,7 +132,7 @@ async function handleLogin(e) {
     const formData = getFormData("loginForm");
 
     try {
-       const response = await fetch(`${API_BASE}/login`, {
+       const response = await fetch(`${API_BASE}/auth/login`, {
 
 
             method: "POST",
