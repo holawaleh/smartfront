@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 let studentsData = [];
 let currentEditingStudent = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (!checkAuth()) return;
     initializeStudentsPage();
 });
@@ -52,8 +52,14 @@ async function apiCall(endpoint, method = 'GET', data = null) {
             return null;
         }
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Ignore
+            }
+            throw new Error(errorMessage);
         }
         const result = await response.json();
         return result;
@@ -111,78 +117,81 @@ function getFormData(formId) {
 }
 
 function initializeStudentsPage() {
-    // Set up event listeners
     setupEventListeners();
-    // Load students data
     loadStudents();
 }
 
 function setupEventListeners() {
-    // Add student form
     const addStudentForm = document.getElementById('addStudentForm');
     if (addStudentForm) {
         addStudentForm.addEventListener('submit', handleAddStudent);
     }
-    // Edit student form
+
     const editStudentForm = document.getElementById('editStudentForm');
     if (editStudentForm) {
         editStudentForm.addEventListener('submit', handleEditStudent);
     }
-    // Capture UID button
+
     const captureUidBtn = document.getElementById('captureUidBtn');
     if (captureUidBtn) {
         captureUidBtn.addEventListener('click', captureLatestUid);
     }
-    // Modal events
+
     const addStudentModal = document.getElementById('addStudentModal');
     if (addStudentModal) {
-        addStudentModal.addEventListener('hidden.bs.modal', function() {
+        addStudentModal.addEventListener('hidden.bs.modal', () => {
             clearForm('addStudentForm');
         });
     }
+
     const editStudentModal = document.getElementById('editStudentModal');
     if (editStudentModal) {
-        editStudentModal.addEventListener('hidden.bs.modal', function() {
+        editStudentModal.addEventListener('hidden.bs.modal', () => {
             clearForm('editStudentForm');
             currentEditingStudent = null;
         });
     }
 }
 
+// ✅ Fixed: Use GET / to load all students
 async function loadStudents() {
     try {
         const tableBody = document.getElementById('studentsTableBody');
-        // Show loading state
         if (tableBody) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
+                        <div class="spinner-border" role="status"></div>
                         <p class="mt-2">Loading students...</p>
                     </td>
                 </tr>
             `;
         }
-        // Call the real API
-        const response = await apiCall('/students');
-        if (response) {
-            studentsData = response.data || response || [];
-            displayStudents(studentsData);
+
+        // ✅ Correct endpoint: GET /
+        const response = await apiCall('/', 'GET');
+
+        if (Array.isArray(response)) {
+            studentsData = response;
+        } else if (response && Array.isArray(response.data)) {
+            studentsData = response.data;
+        } else if (response?.students && Array.isArray(response.students)) {
+            studentsData = response.students;
         } else {
-            throw new Error('Failed to load students');
+            throw new Error('Invalid data format from server');
         }
+
+        displayStudents(studentsData);
     } catch (error) {
         console.error('Error loading students:', error);
-        showAlert('Error loading students: ' + error.message, 'danger');
+        showAlert('Failed to load students: ' + error.message, 'danger');
         const tableBody = document.getElementById('studentsTableBody');
         if (tableBody) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center text-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error loading students: ${error.message}
+                        Load failed: ${error.message}
                     </td>
                 </tr>
             `;
@@ -193,6 +202,7 @@ async function loadStudents() {
 function displayStudents(students) {
     const tableBody = document.getElementById('studentsTableBody');
     if (!tableBody) return;
+
     if (!students || students.length === 0) {
         tableBody.innerHTML = `
             <tr>
@@ -204,6 +214,7 @@ function displayStudents(students) {
         `;
         return;
     }
+
     tableBody.innerHTML = students.map(student => `
         <tr>
             <td>${escapeHtml(student.name || '')}</td>
@@ -235,6 +246,7 @@ function displayStudents(students) {
     `).join('');
 }
 
+// ✅ Uses POST /register
 async function handleAddStudent(event) {
     event.preventDefault();
     if (!validateForm('addStudentForm')) {
@@ -243,24 +255,26 @@ async function handleAddStudent(event) {
     }
     const formData = getFormData('addStudentForm');
     setLoading('saveStudentBtn', true, 'Saving...');
+
     try {
-        const response = await apiCall('/students', 'POST', formData);
+        const response = await apiCall('/register', 'POST', formData);
         if (response) {
-            showAlert('Student added successfully!', 'success');
+            showAlert('Student registered successfully!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
             if (modal) modal.hide();
             await loadStudents();
         } else {
-            throw new Error('Failed to add student');
+            throw new Error('Registration failed');
         }
     } catch (error) {
-        console.error('Error adding student:', error);
-        showAlert('Error adding student: ' + error.message, 'danger');
+        console.error('Error registering student:', error);
+        showAlert('Error: ' + error.message, 'danger');
     } finally {
         setLoading('saveStudentBtn', false, 'Save Student');
     }
 }
 
+// ✅ Uses PUT /students/:id (ensure backend supports this)
 async function handleEditStudent(event) {
     event.preventDefault();
     if (!validateForm('editStudentForm')) {
@@ -273,6 +287,7 @@ async function handleEditStudent(event) {
         showAlert('Student ID not found', 'danger');
         return;
     }
+
     setLoading('updateStudentBtn', true, 'Updating...');
     try {
         const response = await apiCall(`/students/${studentId}`, 'PUT', formData);
@@ -282,11 +297,11 @@ async function handleEditStudent(event) {
             if (modal) modal.hide();
             await loadStudents();
         } else {
-            throw new Error('Failed to update student');
+            throw new Error('Update failed');
         }
     } catch (error) {
         console.error('Error updating student:', error);
-        showAlert('Error updating student: ' + error.message, 'danger');
+        showAlert('Update failed: ' + error.message, 'danger');
     } finally {
         setLoading('updateStudentBtn', false, 'Update Student');
     }
@@ -304,58 +319,50 @@ function editStudent(studentId) {
     modal.show();
 }
 
+// ✅ Uses DELETE /students/:id (ensure backend supports this)
 async function deleteStudent(studentId, studentName) {
-    if (!confirm(`Are you sure you want to delete student "${studentName}"? This action cannot be undone.`)) {
-        return;
-    }
+    if (!confirm(`Delete "${studentName}"? This cannot be undone.`)) return;
     try {
         const response = await apiCall(`/students/${studentId}`, 'DELETE');
         if (response) {
-            showAlert('Student deleted successfully!', 'success');
+            showAlert('Student deleted!', 'success');
             await loadStudents();
         } else {
-            throw new Error('Failed to delete student');
+            throw new Error('Delete failed');
         }
     } catch (error) {
         console.error('Error deleting student:', error);
-        showAlert('Error deleting student: ' + error.message, 'danger');
+        showAlert('Delete failed: ' + error.message, 'danger');
     }
 }
 
-/**
- * ✅ Corrected: Capture the latest UID from the backend
- * Uses GET /students/get-latest-uid to retrieve the last scanned UID
- */
+// ✅ Correct: GET /students/get-latest-uid
 async function captureLatestUid() {
     const captureBtn = document.getElementById('captureUidBtn');
     const uidField = document.getElementById('uid');
     if (!captureBtn || !uidField) return;
 
-    // Set loading state
     captureBtn.disabled = true;
     captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
 
     try {
-        // ✅ Correct endpoint: GET /students/get-latest-uid
         const response = await apiCall('/students/get-latest-uid', 'GET');
-
         if (response && response.uid) {
             uidField.value = response.uid;
-            showAlert('UID captured successfully!', 'success');
+            showAlert('UID captured: ' + response.uid, 'success');
         } else {
-            showAlert('No UID available. Tap a card to capture.', 'info');
+            showAlert('No UID available. Tap a card.', 'info');
         }
     } catch (error) {
         console.error('Error capturing UID:', error);
-        showAlert('Could not capture UID. Please check backend or enter manually.', 'warning');
+        showAlert('Failed to get UID. Check connection.', 'warning');
     } finally {
-        // Reset button state
         captureBtn.disabled = false;
         captureBtn.innerHTML = '<i class="fas fa-sync me-2"></i>Capture Latest UID';
     }
 }
 
-// Form validation and utility functions
+// Form validation
 function validateForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return false;
@@ -363,27 +370,19 @@ function validateForm(formId) {
     for (let field of requiredFields) {
         if (!field.value.trim()) {
             field.focus();
-            const fieldName = field.getAttribute('name') || field.getAttribute('id') || 'required';
-            showAlert(`Please fill in the ${fieldName.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'danger');
+            const name = field.getAttribute('name') || field.id || 'this field';
+            showAlert(`Please fill in ${name}.`, 'danger');
             return false;
         }
-        // Email validation
-        if (field.type === 'email' && field.value.trim()) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(field.value.trim())) {
-                field.focus();
-                showAlert('Please enter a valid email address.', 'danger');
-                return false;
-            }
+        if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
+            field.focus();
+            showAlert('Enter a valid email.', 'danger');
+            return false;
         }
-        // Phone validation (basic)
-        if ((field.name === 'phone' || field.name === 'phoneNumber') && field.value.trim()) {
-            const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/;
-            if (!phoneRegex.test(field.value.trim())) {
-                field.focus();
-                showAlert('Please enter a valid phone number.', 'danger');
-                return false;
-            }
+        if ((field.name === 'phone' || field.name === 'phoneNumber') && !/^[\d\s\-\+\(\)]{10,}$/.test(field.value.trim())) {
+            field.focus();
+            showAlert('Enter a valid phone number.', 'danger');
+            return false;
         }
     }
     return true;
@@ -393,24 +392,11 @@ function populateForm(formId, data) {
     const form = document.getElementById(formId);
     if (!form || !data) return;
     Object.keys(data).forEach(key => {
-        let field = form.querySelector(`[name="${key}"]`) || 
-                   form.querySelector(`#${key}`) ||
-                   form.querySelector(`[name="${key.toLowerCase()}"]`) ||
-                   form.querySelector(`#${key.toLowerCase()}`);
-        
-        // Handle common variations
-        if (!field) {
-            const variations = {
-                'matricNo': ['matricNumber', 'matric_no', 'matric_number'],
-                'phoneNumber': ['phone', 'phone_number'],
-                'matricNumber': ['matricNo', 'matric_no', 'matric_number']
-            };
-            if (variations[key]) {
-                for (let variation of variations[key]) {
-                    field = form.querySelector(`[name="${variation}"]`) || form.querySelector(`#${variation}`);
-                    if (field) break;
-                }
-            }
+        let field = form.querySelector(`[name="${key}"]`) || form.querySelector(`#${key}`);
+        if (!field && key === 'matricNo') {
+            field = form.querySelector('[name="matricNumber"]') || form.querySelector('#matricNumber');
+        } else if (!field && key === 'phoneNumber') {
+            field = form.querySelector('[name="phone"]') || form.querySelector('#phone');
         }
         if (field) field.value = data[key] || '';
     });
@@ -422,120 +408,69 @@ function clearForm(formId) {
     const form = document.getElementById(formId);
     if (form) {
         form.reset();
-        const fields = form.querySelectorAll('.is-invalid, .is-valid');
-        fields.forEach(field => field.classList.remove('is-invalid', 'is-valid'));
+        form.querySelectorAll('.is-invalid, .is-valid').forEach(f => f.classList.remove('is-invalid', 'is-valid'));
     }
 }
 
-// Search and filter functions
-function searchStudents(searchTerm) {
-    if (!searchTerm || !searchTerm.trim()) {
-        displayStudents(studentsData);
-        return;
-    }
-    const filtered = studentsData.filter(student => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            (student.name && student.name.toLowerCase().includes(searchLower)) ||
-            (student.matricNo && student.matricNo.toLowerCase().includes(searchLower)) ||
-            (student.matricNumber && student.matricNumber.toLowerCase().includes(searchLower)) ||
-            (student.email && student.email.toLowerCase().includes(searchLower)) ||
-            (student.department && student.department.toLowerCase().includes(searchLower)) ||
-            (student.phone && student.phone.includes(searchTerm)) ||
-            (student.phoneNumber && student.phoneNumber.includes(searchTerm))
-        );
-    });
-    displayStudents(filtered);
-}
-
-function filterStudentsByLevel(level) {
-    if (!level) {
-        displayStudents(studentsData);
-        return;
-    }
-    const filtered = studentsData.filter(s => s.level && s.level.toString() === level.toString());
-    displayStudents(filtered);
-}
-
-function filterStudentsByDepartment(department) {
-    if (!department) {
-        displayStudents(studentsData);
-        return;
-    }
-    const filtered = studentsData.filter(s => 
-        s.department && s.department.toLowerCase().includes(department.toLowerCase())
+// Search & Filter
+function searchStudents(term) {
+    if (!term) return displayStudents(studentsData);
+    const filtered = studentsData.filter(s =>
+        (s.name || '').toLowerCase().includes(term.toLowerCase()) ||
+        (s.matricNo || '').includes(term) ||
+        (s.email || '').toLowerCase().includes(term.toLowerCase())
     );
     displayStudents(filtered);
 }
 
+function filterStudentsByLevel(level) {
+    displayStudents(level ? studentsData.filter(s => s.level == level) : studentsData);
+}
+
+function filterStudentsByDepartment(dept) {
+    displayStudents(dept ? studentsData.filter(s => (s.department || '').toLowerCase().includes(dept.toLowerCase())) : studentsData);
+}
+
 // Export to CSV
 function exportStudentsToCSV() {
-    if (!studentsData || studentsData.length === 0) {
-        showAlert('No students data to export.', 'warning');
-        return;
-    }
-    try {
-        const csvHeaders = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
-        const csvRows = studentsData.map(s => [
-            s.name || '',
-            s.matricNo || s.matricNumber || '',
-            s.email || '',
-            s.level || '',
-            s.phone || s.phoneNumber || '',
-            s.department || '',
-            s.uid || ''
-        ]);
-        const csvContent = [csvHeaders, ...csvRows]
-            .map(row => row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(','))
-            .join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        showAlert('Students data exported successfully!', 'success');
-    } catch (error) {
-        console.error('Error exporting CSV:', error);
-        showAlert('Error exporting data: ' + error.message, 'danger');
-    }
+    if (!studentsData.length) return showAlert('No data to export.', 'warning');
+    const headers = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
+    const rows = studentsData.map(s => [
+        s.name || '',
+        s.matricNo || '',
+        s.email || '',
+        s.level || '',
+        s.phone || '',
+        s.department || '',
+        s.uid || ''
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(f => `"${f.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showAlert('Exported successfully!', 'success');
 }
 
-// Utility: Escape HTML to prevent XSS
+// Utility
 function escapeHtml(text) {
-    if (!text) return '';
-    const map = {
-        '&': '&amp;',
-        '<': '<',
-        '>': '>',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.toString().replace(/[&<>"']/g, m => map[m]);
+    const map = { '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#039;' };
+    return text?.toString().replace(/[&<>"']/g, m => map[m]) || '';
 }
 
-// Additional helpers
-function refreshStudents() {
-    loadStudents();
-}
-
-function getStudentById(studentId) {
-    return studentsData.find(s => (s._id || s.id) === studentId);
-}
-
-async function bulkDeleteStudents(studentIds) {
-    if (!studentIds || studentIds.length === 0) return;
-    if (!confirm(`Delete ${studentIds.length} student(s)? This cannot be undone.`)) return;
+// Helpers
+function refreshStudents() { loadStudents(); }
+function getStudentById(id) { return studentsData.find(s => s._id === id); }
+async function bulkDelete(ids) {
+    if (!ids.length || !confirm(`Delete ${ids.length} student(s)?`)) return;
     try {
-        const promises = studentIds.map(id => apiCall(`/students/${id}`, 'DELETE'));
-        await Promise.all(promises);
-        showAlert(`${studentIds.length} student(s) deleted!`, 'success');
+        await Promise.all(ids.map(id => apiCall(`/students/${id}`, 'DELETE')));
+        showAlert('Deleted!', 'success');
         await loadStudents();
-    } catch (error) {
-        console.error('Bulk delete error:', error);
-        showAlert('Error deleting students: ' + error.message, 'danger');
+    } catch (e) {
+        showAlert('Bulk delete failed: ' + e.message, 'danger');
     }
 }
