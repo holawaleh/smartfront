@@ -222,9 +222,11 @@ async function handleAddStudent(event) {
     }
     const formData = getFormData('addStudentForm');
     setLoading('saveStudentBtn', true, 'Saving...');
+    
     try {
-        // ✅ Fixed: Use /students instead of /register
-        const response = await apiCall('/students/register', 'POST', formData);
+        // ✅ Fixed: Use string endpoint, not undefined 'register'
+        const response = await apiCall('/students', 'POST', formData);
+
         if (response) {
             showAlert('Student added successfully!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
