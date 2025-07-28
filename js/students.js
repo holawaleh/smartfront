@@ -214,6 +214,7 @@ function displayStudents(students) {
 }
 
 // ✅ Fixed: Use POST /api/students/register
+// ✅ Uses POST /students/register
 async function handleAddStudent(event) {
     event.preventDefault();
     if (!validateForm('addStudentForm')) {
@@ -224,8 +225,8 @@ async function handleAddStudent(event) {
     setLoading('saveStudentBtn', true, 'Saving...');
     
     try {
-        // ✅ Fixed: Use string endpoint, not undefined 'register'
-        const response = await apiCall('/students', 'POST', formData);
+        // ✅ Fixed: Correct endpoint for registration
+        const response = await apiCall('/students/register', 'POST', formData);
 
         if (response) {
             showAlert('Student added successfully!', 'success');
@@ -242,6 +243,7 @@ async function handleAddStudent(event) {
         setLoading('saveStudentBtn', false, 'Save Student');
     }
 }
+
 
 // ✅ Uses PUT /students/:id
 async function handleEditStudent(event) {
