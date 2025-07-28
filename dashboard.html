@@ -302,40 +302,71 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Mock auth functions for demo (replace with your actual auth.js)
+        // Configuration
+        const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Check authentication
         function checkAuth() {
-            console.log('Checking authentication...');
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
         }
 
+        // Logout function
         function logout() {
-            console.log('Logging out...');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userDisplayName');
+            window.location.href = 'login.html';
         }
 
-        // Mock API call function (replace with your actual implementation)
-        async function apiCall(endpoint, method, data = null) {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+        // API call function with authentication
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const token = getAuthToken();
 
-            // Mock data based on endpoint
-            switch (endpoint) {
-                case '/students':
-                    return Array.from({ length: 156 }, (_, i) => ({ id: i + 1, name: `Student ${i + 1}` }));
-                case '/subjects':
-                    return Array.from({ length: 12 }, (_, i) => ({ id: i + 1, name: `Subject ${i + 1}` }));
-                case '/logs':
-                    return Array.from({ length: 1248 }, (_, i) => ({
-                        id: i + 1,
-                        studentName: `Student ${Math.floor(Math.random() * 156) + 1}`,
-                        action: 'scanned',
-                        details: `Subject ${Math.floor(Math.random() * 12) + 1}`,
-                        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-                    }));
-                default:
-                    return [];
+            const config = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+
+            if (data && (method === 'POST' || method === 'PUT')) {
+                config.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    logout();
+                    return null;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('API call error:', error);
+                throw error;
             }
         }
 
-        // Alert function (replace with your actual implementation)
+        // Alert function
         function showAlert(message, type = 'info') {
             const alertContainer = document.getElementById('alertContainer');
             const alert = document.createElement('div');
@@ -379,7 +410,12 @@
 
         // Dashboard initialization
         document.addEventListener('DOMContentLoaded', function () {
-            checkAuth();
+            if (!checkAuth()) return;
+
+            // Set user display name
+            const userDisplayName = localStorage.getItem('userDisplayName') || 'Admin';
+            document.getElementById('userDisplayName').textContent = userDisplayName;
+
             loadDashboardData();
         });
 
@@ -399,9 +435,9 @@
 
         async function loadStudentsCount() {
             try {
-                const response = await apiCall('/students', 'GET');
-                const data = Array.isArray(response) ? response : (response.data || response);
-                const count = Array.isArray(data) ? data.length : (data.length || 0);
+                const response = await apiCall('/students');
+                const students = response?.data || response || [];
+                const count = Array.isArray(students) ? students.length : 0;
                 document.getElementById('totalStudents').textContent = count.toLocaleString();
             } catch (error) {
                 console.error('Error loading students count:', error);
@@ -412,9 +448,9 @@
 
         async function loadSubjectsCount() {
             try {
-                const response = await apiCall('/subjects', 'GET');
-                const data = Array.isArray(response) ? response : (response.data || response);
-                const count = Array.isArray(data) ? data.length : (data.length || 0);
+                const response = await apiCall('/subjects');
+                const subjects = response?.data || response || [];
+                const count = Array.isArray(subjects) ? subjects.length : 0;
                 document.getElementById('totalSubjects').textContent = count.toLocaleString();
             } catch (error) {
                 console.error('Error loading subjects count:', error);
@@ -425,19 +461,19 @@
 
         async function loadLogsCount() {
             try {
-                const response = await apiCall('/logs', 'GET');
-                const data = Array.isArray(response) ? response : (response.data || response);
-                const logs = Array.isArray(data) ? data : [];
+                const response = await apiCall('/logs');
+                const logs = response?.data || response || [];
 
-                const total = logs.length;
+                const total = Array.isArray(logs) ? logs.length : 0;
                 document.getElementById('totalLogs').textContent = total.toLocaleString();
 
                 // Count today's logs
                 const today = new Date().toDateString();
-                const todayLogs = logs.filter(log => {
+                const todayLogs = Array.isArray(logs) ? logs.filter(log => {
                     const logDate = log.createdAt || log.timestamp || log.date;
                     return logDate && new Date(logDate).toDateString() === today;
-                });
+                }) : [];
+
                 document.getElementById('todayLogs').textContent = todayLogs.length.toLocaleString();
             } catch (error) {
                 console.error('Error loading logs count:', error);
@@ -461,18 +497,17 @@
             `;
 
             try {
-                const response = await apiCall('/logs', 'GET');
-                const data = Array.isArray(response) ? response : (response.data || response);
-                const logs = Array.isArray(data) ? data : [];
+                const response = await apiCall('/logs');
+                const logs = response?.data || response || [];
 
-                if (logs.length > 0) {
+                if (Array.isArray(logs) && logs.length > 0) {
                     const recentLogs = logs
                         .sort((a, b) => {
                             const dateA = new Date(a.createdAt || a.timestamp || a.date || 0);
                             const dateB = new Date(b.createdAt || b.timestamp || b.date || 0);
                             return dateB - dateA;
                         })
-                        .slice(0, 10); // Show more recent activities
+                        .slice(0, 10);
 
                     container.innerHTML = recentLogs.map(log => `
                         <div class="activity-item">
@@ -483,7 +518,7 @@
                                         <strong>${getStudentName(log)}</strong>
                                         <span class="text-muted ms-2">${log.action || 'scanned'}</span>
                                     </div>
-                                    ${log.details ? `<div class="text-muted small ms-4">${log.details}</div>` : ''}
+                                    ${log.details || log.subject ? `<div class="text-muted small ms-4">${log.details || log.subject}</div>` : ''}
                                 </div>
                                 <small class="text-muted ms-3 flex-shrink-0">
                                     ${formatDateTime(log.createdAt || log.timestamp || log.date)}
@@ -522,6 +557,7 @@
             return log.studentName ||
                 (log.student && log.student.name) ||
                 log.user?.username ||
+                log.studentId ||
                 'Unknown Student';
         }
     </script>

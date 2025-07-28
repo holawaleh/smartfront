@@ -1,13 +1,128 @@
 // Students management JavaScript
-// This file depends on auth.js being loaded first
+// Updated to work with https://bravetosmart.onrender.com/api/
+
+// Configuration
+const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 
 let studentsData = [];
 let currentEditingStudent = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    checkAuth(); // This function comes from auth.js
+    if (!checkAuth()) return;
     initializeStudentsPage();
 });
+
+// Authentication functions
+function getAuthToken() {
+    return localStorage.getItem('authToken');
+}
+
+function checkAuth() {
+    const token = getAuthToken();
+    if (!token) {
+        window.location.href = 'login.html';
+        return false;
+    }
+    return true;
+}
+
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userDisplayName');
+    window.location.href = 'login.html';
+}
+
+// API call function with authentication
+async function apiCall(endpoint, method = 'GET', data = null) {
+    const token = getAuthToken();
+    
+    const config = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    };
+
+    if (data && (method === 'POST' || method === 'PUT')) {
+        config.body = JSON.stringify(data);
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        
+        if (response.status === 401) {
+            // Token expired or invalid
+            logout();
+            return null;
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('API call error:', error);
+        throw error;
+    }
+}
+
+// Alert function
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) {
+        console.log(`Alert: ${message}`);
+        return;
+    }
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Utility functions
+function setLoading(buttonId, isLoading, loadingText = 'Loading...') {
+    const button = document.getElementById(buttonId);
+    if (!button) return;
+    
+    if (isLoading) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent;
+        button.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${loadingText}`;
+    } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalText || 'Submit';
+    }
+}
+
+function getFormData(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return {};
+    
+    const formData = new FormData(form);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        data[key] = value.trim();
+    }
+    
+    return data;
+}
 
 function initializeStudentsPage() {
     // Set up event listeners
@@ -58,26 +173,28 @@ async function loadStudents() {
         const tableBody = document.getElementById('studentsTableBody');
         
         // Show loading state
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="8" class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading students...</p>
-                </td>
-            </tr>
-        `;
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading students...</p>
+                    </td>
+                </tr>
+            `;
+        }
         
-        // Use apiCall from auth.js
-        const response = await apiCall('/students', 'GET');
+        // Call the real API
+        const response = await apiCall('/students');
         
-        if (response && !response.success === false) {
+        if (response) {
             // Handle the response based on your API structure
-            studentsData = Array.isArray(response) ? response : (response.data || []);
+            studentsData = response.data || response || [];
             displayStudents(studentsData);
         } else {
-            throw new Error(response?.message || 'Failed to load students');
+            throw new Error('Failed to load students');
         }
         
     } catch (error) {
@@ -90,7 +207,7 @@ async function loadStudents() {
                 <tr>
                     <td colspan="8" class="text-center text-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error loading students
+                        Error loading students: ${error.message}
                     </td>
                 </tr>
             `;
@@ -100,6 +217,7 @@ async function loadStudents() {
 
 function displayStudents(students) {
     const tableBody = document.getElementById('studentsTableBody');
+    if (!tableBody) return;
     
     if (!students || students.length === 0) {
         tableBody.innerHTML = `
@@ -116,10 +234,10 @@ function displayStudents(students) {
     tableBody.innerHTML = students.map(student => `
         <tr>
             <td>${escapeHtml(student.name || '')}</td>
-            <td>${escapeHtml(student.matricNo || '')}</td>
+            <td>${escapeHtml(student.matricNo || student.matricNumber || '')}</td>
             <td>${escapeHtml(student.email || '')}</td>
             <td>${escapeHtml(student.level || '')}</td>
-            <td>${escapeHtml(student.phone || '')}</td>
+            <td>${escapeHtml(student.phone || student.phoneNumber || '')}</td>
             <td>${escapeHtml(student.department || '')}</td>
             <td>
                 <span class="badge bg-secondary">
@@ -134,7 +252,7 @@ function displayStudents(students) {
                         <i class="fas fa-edit"></i>
                     </button>
                     <button type="button" class="btn btn-outline-danger" 
-                            onclick="deleteStudent('${student._id || student.id}', '${escapeHtml(student.name)}')" 
+                            onclick="deleteStudent('${student._id || student.id}', '${escapeHtml(student.name || '')}')" 
                             title="Delete Student">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -152,17 +270,17 @@ async function handleAddStudent(event) {
         return;
     }
     
-    const formData = getFormData('addStudentForm'); // This function comes from auth.js
+    const formData = getFormData('addStudentForm');
     const saveBtn = document.getElementById('saveStudentBtn');
     const saveSpinner = document.getElementById('saveSpinner');
     
-    setLoading('saveStudentBtn', true, 'Saving...'); // This function comes from auth.js
+    setLoading('saveStudentBtn', true, 'Saving...');
     if (saveSpinner) saveSpinner.classList.remove('d-none');
     
     try {
-        const response = await apiCall('/students', 'POST', formData); // This function comes from auth.js
+        const response = await apiCall('/students', 'POST', formData);
         
-        if (response && !response.success === false) {
+        if (response) {
             showAlert('Student added successfully!', 'success');
             
             // Close modal
@@ -173,7 +291,7 @@ async function handleAddStudent(event) {
             await loadStudents();
             
         } else {
-            throw new Error(response?.message || 'Failed to add student');
+            throw new Error('Failed to add student');
         }
         
     } catch (error) {
@@ -194,7 +312,12 @@ async function handleEditStudent(event) {
     }
     
     const formData = getFormData('editStudentForm');
-    const studentId = formData.id;
+    const studentId = formData.id || currentEditingStudent?._id || currentEditingStudent?.id;
+    
+    if (!studentId) {
+        showAlert('Student ID not found', 'danger');
+        return;
+    }
     
     const updateBtn = document.getElementById('updateStudentBtn');
     const updateSpinner = document.getElementById('updateSpinner');
@@ -205,7 +328,7 @@ async function handleEditStudent(event) {
     try {
         const response = await apiCall(`/students/${studentId}`, 'PUT', formData);
         
-        if (response && !response.success === false) {
+        if (response) {
             showAlert('Student updated successfully!', 'success');
             
             // Close modal
@@ -216,7 +339,7 @@ async function handleEditStudent(event) {
             await loadStudents();
             
         } else {
-            throw new Error(response?.message || 'Failed to update student');
+            throw new Error('Failed to update student');
         }
         
     } catch (error) {
@@ -253,11 +376,11 @@ async function deleteStudent(studentId, studentName) {
     try {
         const response = await apiCall(`/students/${studentId}`, 'DELETE');
         
-        if (response && !response.success === false) {
+        if (response) {
             showAlert('Student deleted successfully!', 'success');
             await loadStudents();
         } else {
-            throw new Error(response?.message || 'Failed to delete student');
+            throw new Error('Failed to delete student');
         }
         
     } catch (error) {
@@ -284,18 +407,13 @@ async function captureLatestUid() {
             uidField.value = response.uid;
             showAlert('UID captured successfully!', 'success');
         } else {
-            // Generate a temporary UID for testing
-            const tempUid = 'UID' + Date.now().toString().slice(-8);
-            uidField.value = tempUid;
-            showAlert('Generated temporary UID for testing. Please ensure your hardware is connected.', 'warning');
+            // If the endpoint doesn't exist, show a message
+            showAlert('UID capture endpoint not available. Please enter UID manually.', 'warning');
         }
         
     } catch (error) {
         console.error('Error capturing UID:', error);
-        // Generate a temporary UID for testing
-        const tempUid = 'UID' + Date.now().toString().slice(-8);
-        uidField.value = tempUid;
-        showAlert('Could not connect to UID hardware. Generated temporary UID for testing.', 'warning');
+        showAlert('Could not capture UID. Please enter manually or check hardware connection.', 'warning');
     } finally {
         // Reset button state
         captureBtn.disabled = false;
@@ -303,7 +421,7 @@ async function captureLatestUid() {
     }
 }
 
-// Additional utility functions not in auth.js
+// Form validation and utility functions
 function validateForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return false;
@@ -312,8 +430,29 @@ function validateForm(formId) {
     for (let field of requiredFields) {
         if (!field.value.trim()) {
             field.focus();
-            showAlert(`Please fill in the ${field.name || 'required'} field.`, 'danger');
+            const fieldName = field.getAttribute('name') || field.getAttribute('id') || 'required';
+            showAlert(`Please fill in the ${fieldName.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'danger');
             return false;
+        }
+        
+        // Email validation
+        if (field.type === 'email' && field.value.trim()) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(field.value.trim())) {
+                field.focus();
+                showAlert('Please enter a valid email address.', 'danger');
+                return false;
+            }
+        }
+        
+        // Phone validation (basic)
+        if ((field.name === 'phone' || field.name === 'phoneNumber') && field.value.trim()) {
+            const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/;
+            if (!phoneRegex.test(field.value.trim())) {
+                field.focus();
+                showAlert('Please enter a valid phone number.', 'danger');
+                return false;
+            }
         }
     }
     return true;
@@ -324,29 +463,70 @@ function populateForm(formId, data) {
     if (!form || !data) return;
     
     Object.keys(data).forEach(key => {
-        const field = form.querySelector(`[name="${key}"], #${key}`);
+        // Try multiple possible field selectors
+        let field = form.querySelector(`[name="${key}"]`) || 
+                   form.querySelector(`#${key}`) ||
+                   form.querySelector(`[name="${key.toLowerCase()}"]`) ||
+                   form.querySelector(`#${key.toLowerCase()}`);
+        
+        // Handle common field name variations
+        if (!field) {
+            const variations = {
+                'matricNo': ['matricNumber', 'matric_no', 'matric_number'],
+                'phoneNumber': ['phone', 'phone_number'],
+                'matricNumber': ['matricNo', 'matric_no', 'matric_number']
+            };
+            
+            if (variations[key]) {
+                for (let variation of variations[key]) {
+                    field = form.querySelector(`[name="${variation}"]`) || form.querySelector(`#${variation}`);
+                    if (field) break;
+                }
+            }
+        }
+        
         if (field) {
             field.value = data[key] || '';
         }
     });
+    
+    // Set the ID field for editing
+    const idField = form.querySelector('[name="id"]') || form.querySelector('#id');
+    if (idField) {
+        idField.value = data._id || data.id || '';
+    }
 }
 
 function clearForm(formId) {
     const form = document.getElementById(formId);
     if (form) {
         form.reset();
+        
+        // Clear any validation classes
+        const fields = form.querySelectorAll('.is-invalid, .is-valid');
+        fields.forEach(field => {
+            field.classList.remove('is-invalid', 'is-valid');
+        });
     }
 }
 
 // Search and filter functions
 function searchStudents(searchTerm) {
+    if (!searchTerm || !searchTerm.trim()) {
+        displayStudents(studentsData);
+        return;
+    }
+    
     const filteredStudents = studentsData.filter(student => {
         const searchLower = searchTerm.toLowerCase();
         return (
             (student.name && student.name.toLowerCase().includes(searchLower)) ||
             (student.matricNo && student.matricNo.toLowerCase().includes(searchLower)) ||
+            (student.matricNumber && student.matricNumber.toLowerCase().includes(searchLower)) ||
             (student.email && student.email.toLowerCase().includes(searchLower)) ||
-            (student.department && student.department.toLowerCase().includes(searchLower))
+            (student.department && student.department.toLowerCase().includes(searchLower)) ||
+            (student.phone && student.phone.includes(searchTerm)) ||
+            (student.phoneNumber && student.phoneNumber.includes(searchTerm))
         );
     });
     
@@ -359,7 +539,9 @@ function filterStudentsByLevel(level) {
         return;
     }
     
-    const filteredStudents = studentsData.filter(student => student.level === level);
+    const filteredStudents = studentsData.filter(student => 
+        student.level && student.level.toString() === level.toString()
+    );
     displayStudents(filteredStudents);
 }
 
@@ -382,34 +564,42 @@ function exportStudentsToCSV() {
         return;
     }
     
-    const csvHeaders = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
-    const csvRows = studentsData.map(student => [
-        student.name || '',
-        student.matricNo || '',
-        student.email || '',
-        student.level || '',
-        student.phone || '',
-        student.department || '',
-        student.uid || ''
-    ]);
-    
-    const csvContent = [csvHeaders, ...csvRows]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    showAlert('Students data exported successfully!', 'success');
+    try {
+        const csvHeaders = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
+        const csvRows = studentsData.map(student => [
+            student.name || '',
+            student.matricNo || student.matricNumber || '',
+            student.email || '',
+            student.level || '',
+            student.phone || student.phoneNumber || '',
+            student.department || '',
+            student.uid || ''
+        ]);
+        
+        const csvContent = [csvHeaders, ...csvRows]
+            .map(row => row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showAlert('Students data exported successfully!', 'success');
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        showAlert('Error exporting students data: ' + error.message, 'danger');
+    }
 }
 
 // Utility function to escape HTML
 function escapeHtml(text) {
+    if (!text) return '';
     const map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -417,5 +607,34 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
+    return text.toString().replace(/[&<>"']/g, m => map[m]);
+}
+
+// Additional utility functions that might be needed
+function refreshStudents() {
+    loadStudents();
+}
+
+function getStudentById(studentId) {
+    return studentsData.find(s => (s._id || s.id) === studentId);
+}
+
+// Function to handle bulk operations (if needed)
+async function bulkDeleteStudents(studentIds) {
+    if (!studentIds || studentIds.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${studentIds.length} student(s)? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const promises = studentIds.map(id => apiCall(`/students/${id}`, 'DELETE'));
+        await Promise.all(promises);
+        
+        showAlert(`${studentIds.length} student(s) deleted successfully!`, 'success');
+        await loadStudents();
+    } catch (error) {
+        console.error('Error in bulk delete:', error);
+        showAlert('Error deleting students: ' + error.message, 'danger');
+    }
 }
