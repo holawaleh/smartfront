@@ -401,7 +401,7 @@ async function captureLatestUid() {
     
     try {
         // Try the endpoint for getting latest UID
-        const response = await apiCall('/get-latest-uid', 'GET');
+        const response = await apiCall('/students/capture-uid', 'GET');
         
         if (response && response.uid) {
             uidField.value = response.uid;
