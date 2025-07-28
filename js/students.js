@@ -1,9 +1,7 @@
 // Students management JavaScript
 // Updated to work with https://bravetosmart.onrender.com/api/
-
 // Configuration
 const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
-
 let studentsData = [];
 let currentEditingStudent = null;
 
@@ -36,7 +34,6 @@ function logout() {
 // API call function with authentication
 async function apiCall(endpoint, method = 'GET', data = null) {
     const token = getAuthToken();
-    
     const config = {
         method: method,
         headers: {
@@ -44,25 +41,20 @@ async function apiCall(endpoint, method = 'GET', data = null) {
             'Authorization': `Bearer ${token}`
         }
     };
-
     if (data && (method === 'POST' || method === 'PUT')) {
         config.body = JSON.stringify(data);
     }
-
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-        
         if (response.status === 401) {
             // Token expired or invalid
             logout();
             return null;
         }
-
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
         return result;
     } catch (error) {
@@ -78,7 +70,6 @@ function showAlert(message, type = 'info') {
         console.log(`Alert: ${message}`);
         return;
     }
-    
     const alert = document.createElement('div');
     alert.className = `alert alert-${type} alert-dismissible fade show`;
     alert.innerHTML = `
@@ -86,7 +77,6 @@ function showAlert(message, type = 'info') {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     alertContainer.appendChild(alert);
-
     // Auto dismiss after 5 seconds
     setTimeout(() => {
         if (alert.parentNode) {
@@ -99,7 +89,6 @@ function showAlert(message, type = 'info') {
 function setLoading(buttonId, isLoading, loadingText = 'Loading...') {
     const button = document.getElementById(buttonId);
     if (!button) return;
-    
     if (isLoading) {
         button.disabled = true;
         button.dataset.originalText = button.textContent;
@@ -113,21 +102,17 @@ function setLoading(buttonId, isLoading, loadingText = 'Loading...') {
 function getFormData(formId) {
     const form = document.getElementById(formId);
     if (!form) return {};
-    
     const formData = new FormData(form);
     const data = {};
-    
     for (let [key, value] of formData.entries()) {
         data[key] = value.trim();
     }
-    
     return data;
 }
 
 function initializeStudentsPage() {
     // Set up event listeners
     setupEventListeners();
-    
     // Load students data
     loadStudents();
 }
@@ -138,19 +123,16 @@ function setupEventListeners() {
     if (addStudentForm) {
         addStudentForm.addEventListener('submit', handleAddStudent);
     }
-    
     // Edit student form
     const editStudentForm = document.getElementById('editStudentForm');
     if (editStudentForm) {
         editStudentForm.addEventListener('submit', handleEditStudent);
     }
-    
     // Capture UID button
     const captureUidBtn = document.getElementById('captureUidBtn');
     if (captureUidBtn) {
         captureUidBtn.addEventListener('click', captureLatestUid);
     }
-    
     // Modal events
     const addStudentModal = document.getElementById('addStudentModal');
     if (addStudentModal) {
@@ -158,7 +140,6 @@ function setupEventListeners() {
             clearForm('addStudentForm');
         });
     }
-    
     const editStudentModal = document.getElementById('editStudentModal');
     if (editStudentModal) {
         editStudentModal.addEventListener('hidden.bs.modal', function() {
@@ -171,7 +152,6 @@ function setupEventListeners() {
 async function loadStudents() {
     try {
         const tableBody = document.getElementById('studentsTableBody');
-        
         // Show loading state
         if (tableBody) {
             tableBody.innerHTML = `
@@ -185,22 +165,17 @@ async function loadStudents() {
                 </tr>
             `;
         }
-        
         // Call the real API
         const response = await apiCall('/students');
-        
         if (response) {
-            // Handle the response based on your API structure
             studentsData = response.data || response || [];
             displayStudents(studentsData);
         } else {
             throw new Error('Failed to load students');
         }
-        
     } catch (error) {
         console.error('Error loading students:', error);
         showAlert('Error loading students: ' + error.message, 'danger');
-        
         const tableBody = document.getElementById('studentsTableBody');
         if (tableBody) {
             tableBody.innerHTML = `
@@ -218,7 +193,6 @@ async function loadStudents() {
 function displayStudents(students) {
     const tableBody = document.getElementById('studentsTableBody');
     if (!tableBody) return;
-    
     if (!students || students.length === 0) {
         tableBody.innerHTML = `
             <tr>
@@ -230,7 +204,6 @@ function displayStudents(students) {
         `;
         return;
     }
-    
     tableBody.innerHTML = students.map(student => `
         <tr>
             <td>${escapeHtml(student.name || '')}</td>
@@ -264,90 +237,58 @@ function displayStudents(students) {
 
 async function handleAddStudent(event) {
     event.preventDefault();
-    
     if (!validateForm('addStudentForm')) {
         showAlert('Please fill in all required fields correctly.', 'danger');
         return;
     }
-    
     const formData = getFormData('addStudentForm');
-    const saveBtn = document.getElementById('saveStudentBtn');
-    const saveSpinner = document.getElementById('saveSpinner');
-    
     setLoading('saveStudentBtn', true, 'Saving...');
-    if (saveSpinner) saveSpinner.classList.remove('d-none');
-    
     try {
         const response = await apiCall('/students', 'POST', formData);
-        
         if (response) {
             showAlert('Student added successfully!', 'success');
-            
-            // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
             if (modal) modal.hide();
-            
-            // Reload students
             await loadStudents();
-            
         } else {
             throw new Error('Failed to add student');
         }
-        
     } catch (error) {
         console.error('Error adding student:', error);
         showAlert('Error adding student: ' + error.message, 'danger');
     } finally {
         setLoading('saveStudentBtn', false, 'Save Student');
-        if (saveSpinner) saveSpinner.classList.add('d-none');
     }
 }
 
 async function handleEditStudent(event) {
     event.preventDefault();
-    
     if (!validateForm('editStudentForm')) {
         showAlert('Please fill in all required fields correctly.', 'danger');
         return;
     }
-    
     const formData = getFormData('editStudentForm');
     const studentId = formData.id || currentEditingStudent?._id || currentEditingStudent?.id;
-    
     if (!studentId) {
         showAlert('Student ID not found', 'danger');
         return;
     }
-    
-    const updateBtn = document.getElementById('updateStudentBtn');
-    const updateSpinner = document.getElementById('updateSpinner');
-    
     setLoading('updateStudentBtn', true, 'Updating...');
-    if (updateSpinner) updateSpinner.classList.remove('d-none');
-    
     try {
         const response = await apiCall(`/students/${studentId}`, 'PUT', formData);
-        
         if (response) {
             showAlert('Student updated successfully!', 'success');
-            
-            // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
             if (modal) modal.hide();
-            
-            // Reload students
             await loadStudents();
-            
         } else {
             throw new Error('Failed to update student');
         }
-        
     } catch (error) {
         console.error('Error updating student:', error);
         showAlert('Error updating student: ' + error.message, 'danger');
     } finally {
         setLoading('updateStudentBtn', false, 'Update Student');
-        if (updateSpinner) updateSpinner.classList.add('d-none');
     }
 }
 
@@ -357,13 +298,8 @@ function editStudent(studentId) {
         showAlert('Student not found!', 'danger');
         return;
     }
-    
     currentEditingStudent = student;
-    
-    // Populate edit form
     populateForm('editStudentForm', student);
-    
-    // Show edit modal
     const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
     modal.show();
 }
@@ -372,48 +308,46 @@ async function deleteStudent(studentId, studentName) {
     if (!confirm(`Are you sure you want to delete student "${studentName}"? This action cannot be undone.`)) {
         return;
     }
-    
     try {
         const response = await apiCall(`/students/${studentId}`, 'DELETE');
-        
         if (response) {
             showAlert('Student deleted successfully!', 'success');
             await loadStudents();
         } else {
             throw new Error('Failed to delete student');
         }
-        
     } catch (error) {
         console.error('Error deleting student:', error);
         showAlert('Error deleting student: ' + error.message, 'danger');
     }
 }
 
+/**
+ * ✅ Corrected: Capture the latest UID from the backend
+ * Uses GET /students/get-latest-uid to retrieve the last scanned UID
+ */
 async function captureLatestUid() {
     const captureBtn = document.getElementById('captureUidBtn');
     const uidField = document.getElementById('uid');
-    
     if (!captureBtn || !uidField) return;
-    
+
     // Set loading state
     captureBtn.disabled = true;
     captureBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
-    
+
     try {
-        // Try the endpoint for getting latest UID
-        const response = await apiCall('/students/capture-uid', 'GET');
-        
+        // ✅ Correct endpoint: GET /students/get-latest-uid
+        const response = await apiCall('/students/get-latest-uid', 'GET');
+
         if (response && response.uid) {
             uidField.value = response.uid;
             showAlert('UID captured successfully!', 'success');
         } else {
-            // If the endpoint doesn't exist, show a message
-            showAlert('UID capture endpoint not available. Please enter UID manually.', 'warning');
+            showAlert('No UID available. Tap a card to capture.', 'info');
         }
-        
     } catch (error) {
         console.error('Error capturing UID:', error);
-        showAlert('Could not capture UID. Please enter manually or check hardware connection.', 'warning');
+        showAlert('Could not capture UID. Please check backend or enter manually.', 'warning');
     } finally {
         // Reset button state
         captureBtn.disabled = false;
@@ -425,7 +359,6 @@ async function captureLatestUid() {
 function validateForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return false;
-    
     const requiredFields = form.querySelectorAll('[required]');
     for (let field of requiredFields) {
         if (!field.value.trim()) {
@@ -434,7 +367,6 @@ function validateForm(formId) {
             showAlert(`Please fill in the ${fieldName.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`, 'danger');
             return false;
         }
-        
         // Email validation
         if (field.type === 'email' && field.value.trim()) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -444,7 +376,6 @@ function validateForm(formId) {
                 return false;
             }
         }
-        
         // Phone validation (basic)
         if ((field.name === 'phone' || field.name === 'phoneNumber') && field.value.trim()) {
             const phoneRegex = /^[\d\s\-\+\(\)]{10,}$/;
@@ -461,22 +392,19 @@ function validateForm(formId) {
 function populateForm(formId, data) {
     const form = document.getElementById(formId);
     if (!form || !data) return;
-    
     Object.keys(data).forEach(key => {
-        // Try multiple possible field selectors
         let field = form.querySelector(`[name="${key}"]`) || 
                    form.querySelector(`#${key}`) ||
                    form.querySelector(`[name="${key.toLowerCase()}"]`) ||
                    form.querySelector(`#${key.toLowerCase()}`);
         
-        // Handle common field name variations
+        // Handle common variations
         if (!field) {
             const variations = {
                 'matricNo': ['matricNumber', 'matric_no', 'matric_number'],
                 'phoneNumber': ['phone', 'phone_number'],
                 'matricNumber': ['matricNo', 'matric_no', 'matric_number']
             };
-            
             if (variations[key]) {
                 for (let variation of variations[key]) {
                     field = form.querySelector(`[name="${variation}"]`) || form.querySelector(`#${variation}`);
@@ -484,29 +412,18 @@ function populateForm(formId, data) {
                 }
             }
         }
-        
-        if (field) {
-            field.value = data[key] || '';
-        }
+        if (field) field.value = data[key] || '';
     });
-    
-    // Set the ID field for editing
     const idField = form.querySelector('[name="id"]') || form.querySelector('#id');
-    if (idField) {
-        idField.value = data._id || data.id || '';
-    }
+    if (idField) idField.value = data._id || data.id || '';
 }
 
 function clearForm(formId) {
     const form = document.getElementById(formId);
     if (form) {
         form.reset();
-        
-        // Clear any validation classes
         const fields = form.querySelectorAll('.is-invalid, .is-valid');
-        fields.forEach(field => {
-            field.classList.remove('is-invalid', 'is-valid');
-        });
+        fields.forEach(field => field.classList.remove('is-invalid', 'is-valid'));
     }
 }
 
@@ -516,8 +433,7 @@ function searchStudents(searchTerm) {
         displayStudents(studentsData);
         return;
     }
-    
-    const filteredStudents = studentsData.filter(student => {
+    const filtered = studentsData.filter(student => {
         const searchLower = searchTerm.toLowerCase();
         return (
             (student.name && student.name.toLowerCase().includes(searchLower)) ||
@@ -529,8 +445,7 @@ function searchStudents(searchTerm) {
             (student.phoneNumber && student.phoneNumber.includes(searchTerm))
         );
     });
-    
-    displayStudents(filteredStudents);
+    displayStudents(filtered);
 }
 
 function filterStudentsByLevel(level) {
@@ -538,11 +453,8 @@ function filterStudentsByLevel(level) {
         displayStudents(studentsData);
         return;
     }
-    
-    const filteredStudents = studentsData.filter(student => 
-        student.level && student.level.toString() === level.toString()
-    );
-    displayStudents(filteredStudents);
+    const filtered = studentsData.filter(s => s.level && s.level.toString() === level.toString());
+    displayStudents(filtered);
 }
 
 function filterStudentsByDepartment(department) {
@@ -550,36 +462,32 @@ function filterStudentsByDepartment(department) {
         displayStudents(studentsData);
         return;
     }
-    
-    const filteredStudents = studentsData.filter(student => 
-        student.department && student.department.toLowerCase().includes(department.toLowerCase())
+    const filtered = studentsData.filter(s => 
+        s.department && s.department.toLowerCase().includes(department.toLowerCase())
     );
-    displayStudents(filteredStudents);
+    displayStudents(filtered);
 }
 
-// Export functions
+// Export to CSV
 function exportStudentsToCSV() {
     if (!studentsData || studentsData.length === 0) {
         showAlert('No students data to export.', 'warning');
         return;
     }
-    
     try {
         const csvHeaders = ['Name', 'Matric No', 'Email', 'Level', 'Phone', 'Department', 'UID'];
-        const csvRows = studentsData.map(student => [
-            student.name || '',
-            student.matricNo || student.matricNumber || '',
-            student.email || '',
-            student.level || '',
-            student.phone || student.phoneNumber || '',
-            student.department || '',
-            student.uid || ''
+        const csvRows = studentsData.map(s => [
+            s.name || '',
+            s.matricNo || s.matricNumber || '',
+            s.email || '',
+            s.level || '',
+            s.phone || s.phoneNumber || '',
+            s.department || '',
+            s.uid || ''
         ]);
-        
         const csvContent = [csvHeaders, ...csvRows]
             .map(row => row.map(field => `"${field.toString().replace(/"/g, '""')}"`).join(','))
             .join('\n');
-        
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -589,28 +497,27 @@ function exportStudentsToCSV() {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        
         showAlert('Students data exported successfully!', 'success');
     } catch (error) {
         console.error('Error exporting CSV:', error);
-        showAlert('Error exporting students data: ' + error.message, 'danger');
+        showAlert('Error exporting data: ' + error.message, 'danger');
     }
 }
 
-// Utility function to escape HTML
+// Utility: Escape HTML to prevent XSS
 function escapeHtml(text) {
     if (!text) return '';
     const map = {
         '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
+        '<': '<',
+        '>': '>',
         '"': '&quot;',
         "'": '&#039;'
     };
     return text.toString().replace(/[&<>"']/g, m => map[m]);
 }
 
-// Additional utility functions that might be needed
+// Additional helpers
 function refreshStudents() {
     loadStudents();
 }
@@ -619,22 +526,16 @@ function getStudentById(studentId) {
     return studentsData.find(s => (s._id || s.id) === studentId);
 }
 
-// Function to handle bulk operations (if needed)
 async function bulkDeleteStudents(studentIds) {
     if (!studentIds || studentIds.length === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${studentIds.length} student(s)? This action cannot be undone.`)) {
-        return;
-    }
-    
+    if (!confirm(`Delete ${studentIds.length} student(s)? This cannot be undone.`)) return;
     try {
         const promises = studentIds.map(id => apiCall(`/students/${id}`, 'DELETE'));
         await Promise.all(promises);
-        
-        showAlert(`${studentIds.length} student(s) deleted successfully!`, 'success');
+        showAlert(`${studentIds.length} student(s) deleted!`, 'success');
         await loadStudents();
     } catch (error) {
-        console.error('Error in bulk delete:', error);
+        console.error('Bulk delete error:', error);
         showAlert('Error deleting students: ' + error.message, 'danger');
     }
 }
