@@ -94,6 +94,9 @@ function logout() {
 async function apiCall(endpoint, method = "GET", body = null) {
     const token = localStorage.getItem(TOKEN_KEY);
 
+    // Fix: Prepend API_BASE to the endpoint
+    const fullUrl = `${API_BASE}${endpoint}`;
+
     const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -109,7 +112,7 @@ async function apiCall(endpoint, method = "GET", body = null) {
     }
 
     try {
-        const res = await fetch(endpoint, options);
+        const res = await fetch(fullUrl, options);
 
         const contentType = res.headers.get("Content-Type");
 
@@ -140,8 +143,6 @@ async function handleLogin(e) {
 
     try {
        const response = await fetch(`${API_BASE}/auth/login`, {
-
-
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(formData),
