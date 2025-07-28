@@ -6,6 +6,10 @@ const TOKEN_KEY = "authToken";
 const USER_KEY = "currentUser";
 const LOGIN_TIME_KEY = "loginTime";
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+const API_BASE = "https://bravetosmart.onrender.com/api";
+
+
 let sessionTimeoutId = null;
 
 let authToken = localStorage.getItem(TOKEN_KEY);
@@ -128,7 +132,9 @@ async function handleLogin(e) {
     const formData = getFormData("loginForm");
 
     try {
-        const response = await fetch("/auth/login", {
+       const response = await fetch(`${API_BASE}/login`, {
+
+
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(formData),
