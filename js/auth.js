@@ -110,16 +110,23 @@ async function apiCall(endpoint, method = "GET", body = null) {
 
     try {
         const res = await fetch(endpoint, options);
-        const data = await res.json();
 
-        if (res.status === 401) {
-            logout(); // Session expired
+        const contentType = res.headers.get("Content-Type");
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
-        return data;
+        if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            return data;
+        } else {
+            throw new Error("Response is not JSON");
+        }
     } catch (err) {
         console.error("API call error:", err);
-        return { success: false, message: "API request failed" };
+        return { success: false, message: err.message || "API request failed" };
     }
 }
 
