@@ -224,7 +224,7 @@ async function handleAddStudent(event) {
     setLoading('saveStudentBtn', true, 'Saving...');
     try {
         // ✅ Fixed: Use /students instead of /register
-        const response = await apiCall('/students'/register, 'POST', formData);
+        const response = await apiCall('/students/register', 'POST', formData);
         if (response) {
             showAlert('Student added successfully!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
