@@ -217,22 +217,25 @@ function displayStudents(students) {
 async function handleAddStudent(event) {
     event.preventDefault();
     if (!validateForm('addStudentForm')) {
-        showAlert('Please fill all required fields.', 'danger');
+        showAlert('Please fill in all required fields correctly.', 'danger');
         return;
     }
     const formData = getFormData('addStudentForm');
     setLoading('saveStudentBtn', true, 'Saving...');
-
     try {
-        const response = await apiCall('/students/register', 'POST', formData);
+        // ✅ Fixed: Use /students instead of /register
+        const response = await apiCall('/students', 'POST', formData);
         if (response) {
-            showAlert('Student registered!', 'success');
+            showAlert('Student added successfully!', 'success');
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
             if (modal) modal.hide();
             await loadStudents();
+        } else {
+            throw new Error('Failed to add student');
         }
     } catch (error) {
-        showAlert('Register failed: ' + error.message, 'danger');
+        console.error('Error adding student:', error);
+        showAlert('Error adding student: ' + error.message, 'danger');
     } finally {
         setLoading('saveStudentBtn', false, 'Save Student');
     }
