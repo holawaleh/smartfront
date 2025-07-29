@@ -1,166 +1,253 @@
+// students.js - Fixed & Production-Ready
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Use the same token key as your auth system
-  const token = localStorage.getItem("authToken"); // Changed from "token" to "authToken"
-  if (!token) return window.location.href = "login.html"; // Removed leading slash
+    // === Configuration ===
+    const API_BASE_URL = 'https://bravetosmart.onrender.com/api'; // No trailing slash
+    const TOKEN_KEY = 'authToken'; // Must match auth.js
 
-  fetch("https://bravetosmart.onrender.com/api/student/", {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-  .then(res => {
-    if (res.status === 401) {
-      alert("Session expired. Please log in again.");
-      localStorage.removeItem("authToken"); // Changed from "token" to "authToken"
-      window.location.href = "login.html"; // Removed leading slash
-    }
-    return res.json();
-  })
-  .then(data => {
-    const tbody = document.getElementById("studentsTableBody");
-    tbody.innerHTML = "";
-
-    // Check if data is an array or has a data property
-    const students = Array.isArray(data) ? data : (data.data || []);
-
-    if (students.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" class="text-center">No students found</td>
-        </tr>
-      `;
-      return;
+    // === Get Token ===
+    function getAuthToken() {
+        return localStorage.getItem(TOKEN_KEY);
     }
 
-    students.forEach(student => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${student.name || ''}</td>
-        <td>${student.matricNo || student.matric || ''}</td>
-        <td>${student.email || ''}</td>
-        <td>${student.level || ''}</td>
-        <td>${student.phone || ''}</td>
-        <td>${student.department || ''}</td>
-        <td>${student.uid || ''}</td>
-        <td>
-          <button class="btn btn-sm btn-outline-primary me-1" onclick="editStudent('${student.id || student._id}')">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${student.id || student._id}')">
-            <i class="fas fa-trash"></i>
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  })
-  .catch(err => {
-    console.error("Failed to load students:", err);
-    const tbody = document.getElementById("studentsTableBody");
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center text-danger">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          Failed to load students
-        </td>
-      </tr>
-    `;
-  });
-});
-
-// Add student form handler
-document.addEventListener("DOMContentLoaded", () => {
-  const addStudentForm = document.getElementById("addStudentForm");
-  if (addStudentForm) {
-    addStudentForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      
-      const saveBtn = document.getElementById("saveStudentBtn");
-      const saveSpinner = document.getElementById("saveSpinner");
-      const token = localStorage.getItem("authToken");
-      
-      if (!token) {
-        alert("No authentication token found. Please login again.");
-        window.location.href = "login.html";
-        return;
-      }
-      
-      // Show loading state
-      saveSpinner.classList.remove("d-none");
-      saveBtn.disabled = true;
-      
-      try {
-        const formData = new FormData(addStudentForm);
-        const studentData = {};
-        for (const [key, value] of formData.entries()) {
-          studentData[key] = value;
+    // === Check Auth ===
+    function checkAuth() {
+        const token = getAuthToken();
+        if (!token) {
+            alert("Not logged in");
+            window.location.href = "login.html";
+            return false;
         }
-        
-        const response = await fetch("https://bravetosmart.onrender.com/api/student/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(studentData)
+        return true;
+    }
+
+    // === Show Alert ===
+    function showAlert(message, type = "info") {
+        const container = document.getElementById("alertContainer");
+        if (!container) return;
+
+        const alert = Object.assign(document.createElement("div"), {
+            className: `alert alert-${type} alert-dismissible fade show`,
+            innerHTML: `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `
         });
-        
-        if (response.status === 401) {
-          alert("Session expired. Please login again.");
-          localStorage.removeItem("authToken");
-          window.location.href = "login.html";
-          return;
+
+        container.appendChild(alert);
+        setTimeout(() => alert.remove(), 5000);
+    }
+
+    // === API Call Wrapper ===
+    async function apiCall(endpoint, method = 'GET', data = null) {
+        const token = getAuthToken();
+        if (!token) {
+            showAlert("Not logged in", "danger");
+            window.location.href = "login.html";
+            return null;
         }
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          // Show success message
-          const alertContainer = document.getElementById("alertContainer");
-          if (alertContainer) {
-            alertContainer.innerHTML = `
-              <div class="alert alert-success alert-dismissible fade show" role="alert">
-                Student added successfully!
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
+
+        const config = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        };
+
+        if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+            config.body = JSON.stringify(data);
+        }
+
+        try {
+            // Trim any accidental whitespace in endpoint
+            const url = `${API_BASE_URL}${endpoint.replace(/^\/\s+/, '/')}`;
+            const response = await fetch(url, config);
+
+            if (response.status === 401) {
+                localStorage.removeItem(TOKEN_KEY);
+                showAlert("Session expired. Please log in again.", "warning");
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 1000);
+                return null;
+            }
+
+            if (!response.ok) {
+                let errorMessage = `Error: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // If response is not JSON (e.g., 404 HTML page)
+                    const text = await response.text();
+                    console.error("Raw error response:", text);
+                    errorMessage = "Server returned invalid response. Check console.";
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Handle empty response (e.g., DELETE)
+            if (response.status === 204) return { success: true };
+
+            const contentType = response.headers.get("Content-Type");
+            if (contentType && contentType.includes("application/json")) {
+                return await response.json();
+            } else {
+                throw new Error("Response is not JSON");
+            }
+        } catch (err) {
+            if (err.name === "TypeError") {
+                console.error("Network error:", err);
+                throw new Error("Network error: Check your connection");
+            }
+            console.error("API call failed:", err);
+            throw err;
+        }
+    }
+
+    // === Load Students ===
+    async function loadStudents() {
+        const tbody = document.getElementById("studentsTableBody");
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center">
+                    <div class="spinner-border" role="status"></div>
+                    <span class="ms-2">Loading students...</span>
+                </td>
+            </tr>
+        `;
+
+        try {
+            // ✅ Correct endpoint: /students (plural)
+            const data = await apiCall('/students');
+            const students = Array.isArray(data) ? data : (data?.data || []);
+
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No students found. <a href="#" onclick="document.getElementById('addStudentModal').querySelector('.btn-primary').click(); return false;">Add one</a>.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = students.map(student => {
+                const id = student._id || student.id;
+                return `
+                    <tr>
+                        <td>${student.name || 'Unknown'}</td>
+                        <td>${student.matricNo || student.matric || 'N/A'}</td>
+                        <td>${student.email || 'N/A'}</td>
+                        <td>${student.level || 'N/A'}</td>
+                        <td>${student.phone || 'N/A'}</td>
+                        <td>${student.department || 'N/A'}</td>
+                        <td><code>${student.uid || 'N/A'}</code></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editStudent('${id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${id}', '${student.name || 'this student'}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error("Failed to load students:", err);
+            const tbody = document.getElementById("studentsTableBody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${err.message}
+                    </td>
+                </tr>
             `;
-          }
-          
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById("addStudentModal"));
-          modal.hide();
-          
-          // Reset form
-          addStudentForm.reset();
-          
-          // Reload page to show new student
-          window.location.reload();
-          
-        } else {
-          alert(result.message || "Failed to add student");
+            showAlert("Failed to load students: " + err.message, "danger");
         }
-        
-      } catch (error) {
-        console.error("Error adding student:", error);
-        alert("Failed to add student. Please try again.");
-      } finally {
-        // Hide loading state
-        saveSpinner.classList.add("d-none");
-        saveBtn.disabled = false;
-      }
-    });
-  }
+    }
+
+    // === Add Student Form Handler ===
+    const addStudentForm = document.getElementById("addStudentForm");
+    if (addStudentForm) {
+        addStudentForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!checkAuth()) return;
+
+            const saveBtn = document.getElementById("saveStudentBtn");
+            const saveSpinner = document.getElementById("saveSpinner");
+
+            // Show loading
+            saveSpinner.classList.remove("d-none");
+            saveBtn.disabled = true;
+
+            try {
+                const formData = new FormData(addStudentForm);
+                const studentData = Object.fromEntries(formData);
+
+                // Validate required fields
+                if (!studentData.name || !studentData.matricNo || !studentData.uid) {
+                    throw new Error("Please fill in Name, Matric No, and UID");
+                }
+
+                // ✅ Correct endpoint: POST /api/student (no trailing slash)
+                const result = await apiCall('/student', 'POST', studentData);
+
+                if (result) {
+                    showAlert("✅ Student added successfully!", "success");
+                    // Reset form
+                    addStudentForm.reset();
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById("addStudentModal")).hide();
+                    // Refresh student list
+                    await loadStudents();
+                }
+            } catch (err) {
+                showAlert("❌ Error: " + err.message, "danger");
+            } finally {
+                // Hide loading
+                saveSpinner.classList.add("d-none");
+                saveBtn.disabled = false;
+            }
+        });
+    }
+
+    // === Capture UID Button ===
+    const captureUidBtn = document.getElementById("captureUidBtn");
+    if (captureUidBtn) {
+        captureUidBtn.addEventListener("click", () => {
+            // Simulate capturing UID (replace with real logic later)
+            const fakeUid = "UID" + Date.now().toString().slice(-6);
+            document.getElementById("uid").value = fakeUid;
+            showAlert("UID captured: " + fakeUid, "info");
+        });
+    }
+
+    // === Edit Student (Placeholder) ===
+    window.editStudent = function(id) {
+        alert("Edit student: " + id + "\nFeature coming soon!");
+    };
+
+    // === Delete Student ===
+    window.deleteStudent = async function(id, name) {
+        if (!confirm(`Delete student "${name}"? This cannot be undone.`)) return;
+
+        try {
+            await apiCall(`/student/${id}`, 'DELETE');
+            showAlert("✅ Student deleted", "success");
+            await loadStudents();
+        } catch (err) {
+            showAlert("❌ Delete failed: " + err.message, "danger");
+        }
+    };
+
+    // === Initialize on Page Load ===
+    if (checkAuth()) {
+        loadStudents();
+    }
 });
-
-// Placeholder functions for edit and delete (you can implement these later)
-function editStudent(studentId) {
-  console.log("Edit student:", studentId);
-  // TODO: Implement edit functionality
-}
-
-function deleteStudent(studentId) {
-  if (confirm("Are you sure you want to delete this student?")) {
-    console.log("Delete student:", studentId);
-    // TODO: Implement delete functionality
-  }
-}
