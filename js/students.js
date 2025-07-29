@@ -1,13 +1,16 @@
-// students.js - Corrected & Working
+// students.js - Fixed & Working
 
 document.addEventListener("DOMContentLoaded", () => {
-    const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
-    const TOKEN_KEY = 'authToken';
+    // === Configuration ===
+    const API_BASE_URL = 'https://bravetosmart.onrender.com/api'; // ✅ No trailing spaces
+    const TOKEN_KEY = 'authToken'; // ✅ Define once, use everywhere
 
+    // === Get Token ===
     function getAuthToken() {
         return localStorage.getItem(TOKEN_KEY);
     }
 
+    // === Check Auth ===
     function checkAuth() {
         const token = getAuthToken();
         if (!token) {
@@ -18,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return true;
     }
 
+    // === Show Alert ===
     function showAlert(message, type = "info") {
         const container = document.getElementById("alertContainer");
         if (!container) return;
@@ -34,8 +38,15 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => alert.remove(), 5000);
     }
 
+    // === API Call Wrapper ===
     async function apiCall(endpoint, method = 'GET', data = null) {
         const token = getAuthToken();
+        if (!token) {
+            showAlert("Not logged in", "danger");
+            window.location.href = "login.html";
+            return null;
+        }
+
         const config = {
             method,
             headers: {
@@ -54,13 +65,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.status === 401) {
                 localStorage.removeItem(TOKEN_KEY);
                 showAlert("Session expired. Please log in again.", "warning");
-                setTimeout(() => window.location.href = "login.html", 1000);
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 1000);
                 return null;
             }
 
             if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                throw new Error(error.message || `Error: ${response.status}`);
+                let errorMessage = `Error: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    const text = await response.text();
+                    console.error("Raw error response:", text);
+                    errorMessage = "Server returned invalid response";
+                }
+                throw new Error(errorMessage);
             }
 
             return await response.json();
@@ -70,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // === Load Students ===
     async function loadStudents() {
         const tbody = document.getElementById("studentsTableBody");
         tbody.innerHTML = `
@@ -81,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         try {
-            // ✅ Correct: GET /api returns all students
+            // ✅ GET /api returns all students
             const data = await apiCall('/');
             const students = Array.isArray(data) ? data : (data?.data || []);
 
@@ -125,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // === Add Student Form Handler ===
     const addStudentForm = document.getElementById("addStudentForm");
     if (addStudentForm) {
         addStudentForm.addEventListener("submit", async (e) => {
@@ -146,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error("Please fill all fields including UID");
                 }
 
-                // ✅ Correct: POST /api/register
+                // ✅ POST /api/register
                 const result = await apiCall('/register', 'POST', studentData);
 
                 if (result) {
@@ -164,14 +187,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // === Capture UID Button ===
     const captureUidBtn = document.getElementById("captureUidBtn");
     if (captureUidBtn) {
         captureUidBtn.addEventListener("click", async () => {
             const uidInput = document.getElementById("uid");
             const token = getAuthToken();
 
+            if (!token) {
+                alert("Not logged in");
+                window.location.href = "login.html";
+                return;
+            }
+
             try {
-                // ✅ Correct: GET /get-latest-uid
                 const response = await fetch(`${API_BASE_URL}/get-latest-uid`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -193,24 +222,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAlert(`✅ UID: ${data.uid}`, "success");
                 }
             } catch (err) {
-                alert("Scan a card first or check connection");
+                alert("Could not get UID. Make sure a card was scanned.");
             }
         });
     }
 
-    window.editStudent = (id) => alert("Edit: " + id);
+    // === Edit & Delete ===
+    window.editStudent = (id) => {
+        alert("Edit student: " + id + "\nFeature coming soon!");
+    };
+
     window.deleteStudent = async (id, name) => {
-        if (confirm(`Delete ${name}?`)) {
-            try {
-                await apiCall(`/student/${id}`, 'DELETE');
-                showAlert("✅ Deleted");
-                await loadStudents();
-            } catch (err) {
-                showAlert("❌ Delete failed", "danger");
-            }
+        if (!confirm(`Delete student "${name}"? This cannot be undone.`)) return;
+
+        try {
+            await apiCall(`/student/${id}`, 'DELETE');
+            showAlert("✅ Student deleted", "success");
+            await loadStudents();
+        } catch (err) {
+            showAlert("❌ Delete failed: " + err.message, "danger");
         }
     };
 
+    // === Load on Start ===
     if (checkAuth()) {
         loadStudents();
     }
