@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     // === Configuration ===
-    const API_BASE_URL = 'https://bravetosmart.onrender.com/api'; // No trailing slash
+    const API_BASE_URL = 'https://bravetosmart.onrender.com/api'; // ✅ Fixed: Removed trailing spaces
     const TOKEN_KEY = 'authToken'; // Must match auth.js
 
     // === Get Token ===
@@ -60,8 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Trim any accidental whitespace in endpoint
-            const url = `${API_BASE_URL}${endpoint.replace(/^\/\s+/, '/')}`;
+            // Trim any accidental whitespace
+            const url = `${API_BASE_URL}${endpoint.replace(/^\s+/, '')}`;
             const response = await fetch(url, config);
 
             if (response.status === 401) {
@@ -79,22 +79,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     const errorData = await response.json();
                     errorMessage = errorData.message || errorMessage;
                 } catch (e) {
-                    // If response is not JSON (e.g., 404 HTML page)
+                    // Handle HTML response (e.g., 404 page)
                     const text = await response.text();
-                    console.error("Raw error response:", text);
-                    errorMessage = "Server returned invalid response. Check console.";
+                    console.error("Raw server response:", text);
+                    errorMessage = "Server error. Check console.";
                 }
                 throw new Error(errorMessage);
             }
 
-            // Handle empty response (e.g., DELETE)
+            // Handle no content (e.g., DELETE)
             if (response.status === 204) return { success: true };
 
             const contentType = response.headers.get("Content-Type");
             if (contentType && contentType.includes("application/json")) {
                 return await response.json();
             } else {
-                throw new Error("Response is not JSON");
+                throw new Error("Expected JSON response but received plain text");
             }
         } catch (err) {
             if (err.name === "TypeError") {
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         try {
-            // ✅ Correct endpoint: /students (plural)
+            // ✅ Use correct endpoint: GET /api/students
             const data = await apiCall('/students');
             const students = Array.isArray(data) ? data : (data?.data || []);
 
@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="text-center text-muted">
-                            No students found. <a href="#" onclick="document.getElementById('addStudentModal').querySelector('.btn-primary').click(); return false;">Add one</a>.
+                            No students found. <a href="#" onclick="document.getElementById('addStudentModal').querySelector('button[type=submit]').click(); return false;">Add one</a>.
                         </td>
                     </tr>
                 `;
@@ -195,36 +195,71 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error("Please fill in Name, Matric No, and UID");
                 }
 
-                // ✅ Correct endpoint: POST /api/student (no trailing slash)
-                const result = await apiCall('/student', 'POST', studentData);
+                // ✅ Use /register endpoint (as per your API docs)
+                const result = await apiCall('/register', 'POST', studentData);
 
-                if (result) {
+                if (result?.success || result) {
                     showAlert("✅ Student added successfully!", "success");
-                    // Reset form
                     addStudentForm.reset();
-                    // Close modal
                     bootstrap.Modal.getInstance(document.getElementById("addStudentModal")).hide();
-                    // Refresh student list
-                    await loadStudents();
+                    await loadStudents(); // Refresh without reload
+                } else {
+                    throw new Error(result.message || "Unknown error");
                 }
             } catch (err) {
                 showAlert("❌ Error: " + err.message, "danger");
             } finally {
-                // Hide loading
                 saveSpinner.classList.add("d-none");
                 saveBtn.disabled = false;
             }
         });
     }
 
-    // === Capture UID Button ===
+    // === Capture UID Button (REAL API CALL) ===
     const captureUidBtn = document.getElementById("captureUidBtn");
     if (captureUidBtn) {
-        captureUidBtn.addEventListener("click", () => {
-            // Simulate capturing UID (replace with real logic later)
-            const fakeUid = "UID" + Date.now().toString().slice(-6);
-            document.getElementById("uid").value = fakeUid;
-            showAlert("UID captured: " + fakeUid, "info");
+        captureUidBtn.addEventListener("click", async () => {
+            const token = getAuthToken();
+            const uidInput = document.getElementById("uid");
+
+            if (!token) {
+                alert("Not logged in");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // ✅ Use real endpoint: GET /get-latest-uid
+                const response = await fetch(`${API_BASE_URL}/get-latest-uid`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    alert("Session expired");
+                    localStorage.removeItem(TOKEN_KEY);
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch UID from scanner");
+                }
+
+                const data = await response.json();
+                const uid = data.uid;
+
+                if (uid) {
+                    uidInput.value = uid;
+                    showAlert(`✅ UID captured: ${uid}`, "success");
+                } else {
+                    alert("No UID available. Please scan a card.");
+                }
+            } catch (err) {
+                console.error("Error fetching UID:", err);
+                alert("Could not get UID. Check console for details.");
+            }
         });
     }
 
