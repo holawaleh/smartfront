@@ -172,45 +172,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // === Capture UID Button ===
-    const captureUidBtn = document.getElementById("captureUidBtn");
-    if (captureUidBtn) {
-        captureUidBtn.addEventListener("click", async () => {
-            const uidInput = document.getElementById("uid");
-            const token = getAuthToken();
+const captureUidBtn = document.getElementById("captureUidBtn");
+if (captureUidBtn) {
+    captureUidBtn.addEventListener("click", async () => {
+        const uidInput = document.getElementById("uid");
+        const token = getAuthToken();
 
-            if (!token) {
-                alert("Not logged in");
+        if (!token) {
+            alert("Not logged in");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            // ✅ Correct URL: /api/students/get-latest-uid
+            const response = await fetch("https://bravetosmart.onrender.com/api/students/get-latest-uid", {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                alert("Session expired");
+                localStorage.removeItem('authToken');
                 window.location.href = "login.html";
                 return;
             }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/students/get-latest-uid`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.status === 401) {
-                    alert("Session expired");
-                    localStorage.removeItem('authToken');
-                    window.location.href = "login.html";
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error("No UID scanned yet");
-                }
-
-                const data = await response.json();
-                if (data.uid) {
-                    uidInput.value = data.uid;
-                    showAlert(`✅ UID: ${data.uid}`, "success");
-                }
-            } catch (err) {
-                alert("Scan a card first or check connection");
+            if (!response.ok) {
+                throw new Error("No UID scanned yet");
             }
-        });
-    }
 
+            const data = await response.json();
+            if (data.uid) {
+                uidInput.value = data.uid;
+                showAlert(`✅ UID: ${data.uid}`, "success");
+            }
+        } catch (err) {
+            alert("Scan a card first or check connection");
+        }
+    });
+}
     window.editStudent = (id) => alert("Edit: " + id);
     window.deleteStudent = async (id, name) => {
         if (confirm(`Delete ${name}?`)) {
