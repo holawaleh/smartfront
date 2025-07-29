@@ -1,16 +1,15 @@
-// students.js - Fixed & Working
+// students.js - Safe & Fixed
 
 document.addEventListener("DOMContentLoaded", () => {
-    // === Configuration ===
-    const API_BASE_URL = 'https://bravetosmart.onrender.com/api'; // ✅ No trailing spaces
-    const TOKEN_KEY = 'authToken'; // ✅ Define once, use everywhere
+    // ✅ Do NOT redeclare TOKEN_KEY if it's already in auth.js
+    // Assume it exists: const TOKEN_KEY = "authToken"; in auth.js
 
-    // === Get Token ===
+    const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
+
     function getAuthToken() {
-        return localStorage.getItem(TOKEN_KEY);
+        return localStorage.getItem('authToken'); // Or: localStorage.getItem(TOKEN_KEY)
     }
 
-    // === Check Auth ===
     function checkAuth() {
         const token = getAuthToken();
         if (!token) {
@@ -21,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return true;
     }
 
-    // === Show Alert ===
     function showAlert(message, type = "info") {
         const container = document.getElementById("alertContainer");
         if (!container) return;
@@ -38,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => alert.remove(), 5000);
     }
 
-    // === API Call Wrapper ===
     async function apiCall(endpoint, method = 'GET', data = null) {
         const token = getAuthToken();
         if (!token) {
@@ -63,25 +60,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
             if (response.status === 401) {
-                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem('authToken'); // or TOKEN_KEY
                 showAlert("Session expired. Please log in again.", "warning");
-                setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 1000);
+                setTimeout(() => window.location.href = "login.html", 1000);
                 return null;
             }
 
             if (!response.ok) {
-                let errorMessage = `Error: ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                } catch (e) {
-                    const text = await response.text();
-                    console.error("Raw error response:", text);
-                    errorMessage = "Server returned invalid response";
-                }
-                throw new Error(errorMessage);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Error: ${response.status}`);
             }
 
             return await response.json();
@@ -103,8 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         try {
-            // ✅ GET /api returns all students
-            const data = await apiCall('/');
+            const data = await apiCall('/'); // ✅ GET /api returns students
             const students = Array.isArray(data) ? data : (data?.data || []);
 
             if (students.length === 0) {
@@ -166,10 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const studentData = Object.fromEntries(formData);
 
                 if (!studentData.name || !studentData.matricNo || !studentData.uid) {
-                    throw new Error("Please fill all fields including UID");
+                    throw new Error("Please fill all fields");
                 }
 
-                // ✅ POST /api/register
                 const result = await apiCall('/register', 'POST', studentData);
 
                 if (result) {
@@ -207,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.status === 401) {
                     alert("Session expired");
-                    localStorage.removeItem(TOKEN_KEY);
+                    localStorage.removeItem('authToken');
                     window.location.href = "login.html";
                     return;
                 }
@@ -222,29 +207,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAlert(`✅ UID: ${data.uid}`, "success");
                 }
             } catch (err) {
-                alert("Could not get UID. Make sure a card was scanned.");
+                alert("Scan a card first or check connection");
             }
         });
     }
 
-    // === Edit & Delete ===
-    window.editStudent = (id) => {
-        alert("Edit student: " + id + "\nFeature coming soon!");
-    };
-
+    window.editStudent = (id) => alert("Edit: " + id);
     window.deleteStudent = async (id, name) => {
-        if (!confirm(`Delete student "${name}"? This cannot be undone.`)) return;
-
-        try {
-            await apiCall(`/student/${id}`, 'DELETE');
-            showAlert("✅ Student deleted", "success");
-            await loadStudents();
-        } catch (err) {
-            showAlert("❌ Delete failed: " + err.message, "danger");
+        if (confirm(`Delete ${name}?`)) {
+            try {
+                await apiCall(`/student/${id}`, 'DELETE');
+                showAlert("✅ Deleted");
+                await loadStudents();
+            } catch (err) {
+                showAlert("❌ Delete failed", "danger");
+            }
         }
     };
 
-    // === Load on Start ===
     if (checkAuth()) {
         loadStudents();
     }
