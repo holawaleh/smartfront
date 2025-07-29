@@ -6,10 +6,17 @@ let studentsData = [];
 let currentEditingStudent = null;
 
 // subjects.js
-document.addEventListener('DOMContentLoaded', function() {
-    if (!checkAuth()) return;  // This will now work because auth.js is loaded first
-    initializeSubjectsPage();
+document.addEventListener("DOMContentLoaded", () => {
+  checkLoginStatus();
 });
+
+function checkLoginStatus() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "login.html";
+  }
+}
+
 
 function initializeSubjectsPage() {
     // Your subjects initialization code here
