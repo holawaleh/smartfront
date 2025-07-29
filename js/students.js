@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/get-latest-uid`, {
+                const response = await fetch(`${API_BASE_URL}/students/get-latest-uid`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
