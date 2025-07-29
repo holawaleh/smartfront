@@ -1,13 +1,23 @@
+console.log('checkAuth function exists:', typeof checkAuth === 'function');
 // Students management JavaScript
 // Updated to work with https://bravetosmart.onrender.com/api/students
 const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 let studentsData = [];
 let currentEditingStudent = null;
 
-document.addEventListener('DOMContentLoaded', function () {
-    if (!checkAuth()) return;
-    initializeStudentsPage();
+// subjects.js
+document.addEventListener('DOMContentLoaded', function() {
+    if (!checkAuth()) return;  // This will now work because auth.js is loaded first
+    initializeSubjectsPage();
 });
+
+function initializeSubjectsPage() {
+    // Your subjects initialization code here
+    setupEventListeners();
+    loadSubjects();
+}
+
+// Rest of your subjects.js code...
 
 // Authentication functions
 function getAuthToken() {
