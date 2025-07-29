@@ -185,8 +185,8 @@ if (captureUidBtn) {
         }
 
         try {
-            // ✅ Correct URL: /api/students/get-latest-uid
-            const response = await fetch("https://bravetosmart.onrender.com/api/students/get-latest-uid", {
+            // ✅ Fixed endpoint
+            const response = await fetch("https://bravetosmart.onrender.com/api/get-latest-uid", {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
