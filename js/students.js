@@ -1,13 +1,12 @@
 // students.js - Safe & Fixed
 
 document.addEventListener("DOMContentLoaded", () => {
-    // ✅ Do NOT redeclare TOKEN_KEY if it's already in auth.js
-    // Assume it exists: const TOKEN_KEY = "authToken"; in auth.js
+    
 
     const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 
     function getAuthToken() {
-        return localStorage.getItem('authToken'); // Or: localStorage.getItem(TOKEN_KEY)
+        return localStorage.getItem('authToken'); 
     }
 
     function checkAuth() {
