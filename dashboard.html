@@ -84,11 +84,9 @@
                 <i class="fas fa-graduation-cap me-2"></i>
                 Student Management System
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
@@ -117,7 +115,6 @@
                         </a>
                     </li>
                 </ul>
-
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -160,14 +157,11 @@
                                 </h4>
                                 <p class="card-text mb-0">Total Students</p>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-users fa-2x opacity-75"></i>
-                            </div>
+                            <i class="fas fa-users fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3 mb-3">
                 <div class="card bg-success text-white stats-card h-100">
                     <div class="card-body">
@@ -180,14 +174,11 @@
                                 </h4>
                                 <p class="card-text mb-0">Total Subjects</p>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-book fa-2x opacity-75"></i>
-                            </div>
+                            <i class="fas fa-book fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3 mb-3">
                 <div class="card bg-info text-white stats-card h-100">
                     <div class="card-body">
@@ -200,14 +191,11 @@
                                 </h4>
                                 <p class="card-text mb-0">Total Scan Logs</p>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
-                            </div>
+                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3 mb-3">
                 <div class="card bg-warning text-dark stats-card h-100">
                     <div class="card-body">
@@ -220,9 +208,7 @@
                                 </h4>
                                 <p class="card-text mb-0">Today's Scans</p>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-calendar-day fa-2x opacity-75"></i>
-                            </div>
+                            <i class="fas fa-calendar-day fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
@@ -301,20 +287,16 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script src="js/auth.js"></script> <!-- Load auth.js FIRST -->
-    <!-- <script src="js/subjects.js"></script> Then load subjects.js -->
+    <script src="js/auth.js"></script>
 
     <script>
-        // Configuration
         const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
+        const TOKEN_KEY = 'authToken';
 
-        // Get JWT token from localStorage
         function getAuthToken() {
-            return localStorage.getItem('authToken');
+            return localStorage.getItem(TOKEN_KEY);
         }
 
-        // Check authentication
         function checkAuth() {
             const token = getAuthToken();
             if (!token) {
@@ -324,27 +306,24 @@
             return true;
         }
 
-        // Logout function
         function logout() {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem('userRole');
             localStorage.removeItem('userDisplayName');
             window.location.href = 'login.html';
         }
 
-        // API call function with authentication
         async function apiCall(endpoint, method = 'GET', data = null) {
             const token = getAuthToken();
-
             const config = {
-                method: method,
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
             };
 
-            if (data && (method === 'POST' || method === 'PUT')) {
+            if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
                 config.body = JSON.stringify(data);
             }
 
@@ -352,217 +331,134 @@
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
                 if (response.status === 401) {
-                    // Token expired or invalid
                     logout();
                     return null;
                 }
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || `Error: ${response.status}`);
                 }
 
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error('API call error:', error);
-                throw error;
+                return await response.json();
+            } catch (err) {
+                console.error("API call error:", err);
+                throw err;
             }
         }
 
-        // Alert function
-        function showAlert(message, type = 'info') {
-            const alertContainer = document.getElementById('alertContainer');
-            const alert = document.createElement('div');
+        function showAlert(message, type = "info") {
+            const container = document.getElementById("alertContainer");
+            const alert = document.createElement("div");
             alert.className = `alert alert-${type} alert-dismissible fade show`;
             alert.innerHTML = `
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            alertContainer.appendChild(alert);
-
-            // Auto dismiss after 5 seconds
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.remove();
-                }
-            }, 5000);
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
         }
 
-        // Utility function to format date/time
         function formatDateTime(timestamp) {
-            if (!timestamp) return 'Unknown time';
-
-            try {
-                const date = new Date(timestamp);
-                const now = new Date();
-                const diffMs = now - date;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-
-                if (diffMins < 1) return 'Just now';
-                if (diffMins < 60) return `${diffMins}m ago`;
-                if (diffHours < 24) return `${diffHours}h ago`;
-                if (diffDays < 7) return `${diffDays}d ago`;
-
-                return date.toLocaleDateString();
-            } catch (error) {
-                return 'Invalid date';
-            }
+            if (!timestamp) return "Unknown";
+            const now = new Date();
+            const then = new Date(timestamp);
+            const diffMs = now - then;
+            const mins = Math.floor(diffMs / 60000);
+            if (mins < 1) return "Just now";
+            if (mins < 60) return `${mins}m ago`;
+            return then.toLocaleTimeString();
         }
 
-        // Dashboard initialization
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener("DOMContentLoaded", () => {
             if (!checkAuth()) return;
 
-            // Set user display name
-            const userDisplayName = localStorage.getItem('userDisplayName') || 'Admin';
-            document.getElementById('userDisplayName').textContent = userDisplayName;
+            const userDisplayName = localStorage.getItem("userDisplayName") || "Admin";
+            document.getElementById("userDisplayName").textContent = userDisplayName;
 
             loadDashboardData();
         });
 
         async function loadDashboardData() {
-            try {
-                await Promise.all([
-                    loadStudentsCount(),
-                    loadSubjectsCount(),
-                    loadLogsCount(),
-                    loadRecentActivity()
-                ]);
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                showAlert('Error loading dashboard data: ' + error.message, 'danger');
-            }
+            await Promise.allSettled([
+                loadStudentsCount(),
+                loadSubjectsCount(),
+                loadLogsCount(),
+                loadRecentActivity()
+            ]);
         }
 
+        // ✅ FIX: GET /api returns students, not /students
         async function loadStudentsCount() {
             try {
-                const response = await apiCall('/students');
-                const students = response?.data || response || [];
-                const count = Array.isArray(students) ? students.length : 0;
-                document.getElementById('totalStudents').textContent = count.toLocaleString();
-            } catch (error) {
-                console.error('Error loading students count:', error);
-                document.getElementById('totalStudents').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
-                showAlert('Failed to load student count', 'warning');
+                const data = await apiCall('/'); // ← Correct endpoint
+                const students = Array.isArray(data) ? data : (data?.data || []);
+                document.getElementById("totalStudents").textContent = students.length.toLocaleString();
+            } catch (err) {
+                document.getElementById("totalStudents").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                console.error("Failed to load student count:", err);
             }
         }
 
         async function loadSubjectsCount() {
             try {
-                const response = await apiCall('/subjects');
-                const subjects = response?.data || response || [];
-                const count = Array.isArray(subjects) ? subjects.length : 0;
-                document.getElementById('totalSubjects').textContent = count.toLocaleString();
-            } catch (error) {
-                console.error('Error loading subjects count:', error);
-                document.getElementById('totalSubjects').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
-                showAlert('Failed to load subject count', 'warning');
+                const data = await apiCall('/subjects');
+                const subjects = Array.isArray(data) ? data : (data?.data || []);
+                document.getElementById("totalSubjects").textContent = subjects.length.toLocaleString();
+            } catch (err) {
+                document.getElementById("totalSubjects").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             }
         }
 
         async function loadLogsCount() {
             try {
-                const response = await apiCall('/logs');
-                const logs = response?.data || response || [];
-
-                const total = Array.isArray(logs) ? logs.length : 0;
-                document.getElementById('totalLogs').textContent = total.toLocaleString();
-
-                // Count today's logs
+                const data = await apiCall('/logs');
+                const logs = Array.isArray(data) ? data : (data?.data || []);
+                const total = logs.length;
                 const today = new Date().toDateString();
-                const todayLogs = Array.isArray(logs) ? logs.filter(log => {
-                    const logDate = log.createdAt || log.timestamp || log.date;
-                    return logDate && new Date(logDate).toDateString() === today;
-                }) : [];
+                const todayLogs = logs.filter(log => {
+                    const logDate = new Date(log.createdAt || log.timestamp || 0);
+                    return logDate.toDateString() === today;
+                }).length;
 
-                document.getElementById('todayLogs').textContent = todayLogs.length.toLocaleString();
-            } catch (error) {
-                console.error('Error loading logs count:', error);
-                document.getElementById('totalLogs').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
-                document.getElementById('todayLogs').innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
-                showAlert('Failed to load log counts', 'warning');
+                document.getElementById("totalLogs").textContent = total.toLocaleString();
+                document.getElementById("todayLogs").textContent = todayLogs.toLocaleString();
+            } catch (err) {
+                document.getElementById("totalLogs").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                document.getElementById("todayLogs").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             }
         }
 
         async function loadRecentActivity() {
-            const container = document.getElementById('recentActivity');
-
-            // Show loading state
-            container.innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border loading-spinner" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Loading recent activity...</p>
-                </div>
-            `;
+            const container = document.getElementById("recentActivity");
+            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div><p class="mt-2">Loading...</p></div>';
 
             try {
-                const response = await apiCall('/logs');
-                const logs = response?.data || response || [];
+                const data = await apiCall('/logs');
+                const logs = Array.isArray(data) ? data : (data?.data || []);
 
-                if (Array.isArray(logs) && logs.length > 0) {
-                    const recentLogs = logs
-                        .sort((a, b) => {
-                            const dateA = new Date(a.createdAt || a.timestamp || a.date || 0);
-                            const dateB = new Date(b.createdAt || b.timestamp || b.date || 0);
-                            return dateB - dateA;
-                        })
-                        .slice(0, 10);
+                const recent = logs
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                    .slice(0, 10);
 
-                    container.innerHTML = recentLogs.map(log => `
-                        <div class="activity-item">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fas fa-user-circle me-2 text-primary"></i>
-                                        <strong>${getStudentName(log)}</strong>
-                                        <span class="text-muted ms-2">${log.action || 'scanned'}</span>
-                                    </div>
-                                    ${log.details || log.subject ? `<div class="text-muted small ms-4">${log.details || log.subject}</div>` : ''}
+                container.innerHTML = recent.map(log => `
+                    <div class="activity-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                                    <strong>${log.studentName || "Unknown"}</strong>
+                                    <span class="text-muted ms-2">${log.action || "scanned"}</span>
                                 </div>
-                                <small class="text-muted ms-3 flex-shrink-0">
-                                    ${formatDateTime(log.createdAt || log.timestamp || log.date)}
-                                </small>
+                                ${log.subject ? `<div class="text-muted small ms-4">${log.subject}</div>` : ''}
                             </div>
+                            <small class="text-muted">${formatDateTime(log.createdAt)}</small>
                         </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `
-                        <div class="text-center py-4">
-                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
-                            <p class="text-muted">No recent activity found</p>
-                            <button class="btn btn-outline-primary btn-sm" onclick="loadRecentActivity()">
-                                <i class="fas fa-sync-alt me-1"></i>Refresh
-                            </button>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading recent activity:', error);
-                container.innerHTML = `
-                    <div class="text-center py-4">
-                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
-                        <p class="text-danger">Error loading recent activity</p>
-                        <button class="btn btn-outline-danger btn-sm" onclick="loadRecentActivity()">
-                            <i class="fas fa-redo me-1"></i>Try Again
-                        </button>
                     </div>
-                `;
-                showAlert('Failed to load recent activity', 'danger');
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<p class="text-danger text-center">Failed to load activity</p>';
             }
-        }
-
-        // Helper function to get student name from log
-        function getStudentName(log) {
-            return log.studentName ||
-                (log.student && log.student.name) ||
-                log.user?.username ||
-                log.studentId ||
-                'Unknown Student';
         }
     </script>
 </body>
