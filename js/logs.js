@@ -14,8 +14,8 @@ async function loadLogs() {
     </td></tr>`;
 
   try {
-    const response = await apiCall("/logs");
-    const data = response.data || [];
+    const res = await apiCall('/logs');
+    const data = res.data || res;
 
     if (!Array.isArray(data) || data.length === 0) {
       tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No logs found</td></tr>`;
@@ -52,17 +52,17 @@ async function loadLogsSummary() {
     </div>`;
 
   try {
-    const response = await apiCall("/logs/summary");
-    const data = response.data || {};
+    const res = await apiCall('/logs/summary');
+    const data = res.data || res;
 
     summaryContent.innerHTML = `
-      <p><strong>Total Logs:</strong> ${data.totalLogs || 0}</p>
-      <p><strong>Entry Logs:</strong> ${data.entryCount || 0}</p>
-      <p><strong>Exit Logs:</strong> ${data.exitCount || 0}</p>
+      <p><strong>Total Logs:</strong> ${data.totalLogs}</p>
+      <p><strong>Entry Logs:</strong> ${data.entryCount}</p>
+      <p><strong>Exit Logs:</strong> ${data.exitCount}</p>
       <hr />
       <h5>Logs Per Student:</h5>
       <ul class="list-group">
-        ${(data.logsPerStudent || []).map(s => `
+        ${data.logsPerStudent.map(s => `
           <li class="list-group-item d-flex justify-content-between">
             <span>${s.studentName} (${s.matricNo})</span>
             <span class="badge bg-info">${s.scanCount}</span>
@@ -70,7 +70,7 @@ async function loadLogsSummary() {
         `).join('')}
       </ul>`;
 
-    new bootstrap.Modal(document.getElementById("summaryModal")).show();
+    new bootstrap.Modal(document.getElementById('summaryModal')).show();
   } catch (err) {
     console.error("❌ Failed to load summary:", err);
     summaryContent.innerHTML = `<p class="text-danger">Failed to load summary</p>`;
@@ -80,12 +80,6 @@ async function loadLogsSummary() {
 
 function initializeLogsPage() {
   if (!checkAuth()) return;
-
-  const userDisplay = document.getElementById("userDisplayName");
-  if (userDisplay) {
-    userDisplay.textContent = localStorage.getItem("userDisplayName") || "Admin";
-  }
-
   loadLogs();
 }
 
