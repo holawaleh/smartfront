@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         try {
-            const data = await apiCall('/'); // ✅ GET /api returns students
+            const data = await apiCall('/students'); // ✅ GET /api returns students
             const students = Array.isArray(data) ? data : (data?.data || []);
 
             if (students.length === 0) {
