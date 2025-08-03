@@ -1,161 +1,150 @@
-let subjectsData = [];
+document.addEventListener("DOMContentLoaded", async () => {
+    checkAuth(); // Ensure user is authenticated
 
-document.addEventListener('DOMContentLoaded', function () {
-  checkAuth();
-  initializeSubjectsPage();
+    await loadSubjects();
+
+    const addSubjectForm = document.getElementById("addSubjectForm");
+    if (addSubjectForm) {
+        addSubjectForm.addEventListener("submit", handleAddSubject);
+    }
 });
 
-function initializeSubjectsPage() {
-  setupEventListeners();
-  loadSubjects();
-}
-
-function setupEventListeners() {
-  const addSubjectForm = document.getElementById('addSubjectForm');
-  if (addSubjectForm) {
-    addSubjectForm.addEventListener('submit', handleAddSubject);
-  }
-}
-
 async function loadSubjects() {
-  const tableBody = document.getElementById('subjectsTableBody');
-
-  tableBody.innerHTML = `
-    <tr>
-      <td colspan="6" class="text-center">
-        <div class="spinner-border" role="status"></div>
-        <p>Loading courses...</p>
-      </td>
-    </tr>
-  `;
-
-  try {
-    const response = await apiCall('/subjects', 'GET');
-    if (Array.isArray(response)) {
-      subjectsData = response;
-      displaySubjects(subjectsData);
-    } else {
-      throw new Error('Unexpected format');
+    try {
+        const subjects = await apiCall("/subjects");
+        displaySubjects(subjects);
+    } catch (err) {
+        showAlert("Failed to load subjects", "danger");
     }
-  } catch (error) {
-    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading courses</td></tr>`;
-    showAlert(error.message, 'danger');
-  }
 }
 
 function displaySubjects(subjects) {
-  const tableBody = document.getElementById('subjectsTableBody');
+    const tbody = document.getElementById("subjectsTableBody");
+    if (!tbody) return;
 
-  if (!subjects.length) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center text-muted">
-          <i class="fas fa-book me-2"></i>No courses found
-        </td>
-      </tr>
-    `;
-    return;
-  }
+    if (!subjects || subjects.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No courses found.</td></tr>`;
+        return;
+    }
 
-  tableBody.innerHTML = subjects.map(sub => `
-    <tr>
-      <td><strong>${escapeHtml(sub.code)}</strong></td>
-      <td>${escapeHtml(sub.name)}</td>
-      <td>—</td> <!-- Level not available -->
-      <td>—</td> <!-- Credit Units not available -->
-      <td>—</td> <!-- Semester not available -->
-      <td>
-        <button class="btn btn-outline-danger btn-sm" onclick="deleteSubject('${sub._id}', '${sub.name}')">
-          <i class="fas fa-trash me-1"></i> Delete
-        </button>
-      </td>
-    </tr>
-  `).join('');
+    tbody.innerHTML = "";
+    subjects.forEach((subject, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${subject.code}</td>
+            <td>${subject.name}</td>
+            <td>${subject.level || "-"}</td>
+            <td>${subject.units || "-"}</td>
+            <td>${subject.semester || "-"}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Edit" onclick="editSubject('${subject._id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete" onclick="deleteSubject('${subject._id}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
+// 🔍 Filter subjects by level
+function filterSubjectsByLevel(level) {
+    const rows = document.querySelectorAll("#subjectsTableBody tr");
+    rows.forEach(row => {
+        const levelCell = row.cells[2];
+        if (!level || (levelCell && levelCell.textContent === level)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// 🔎 Search subjects by course name or code
+function searchSubjects(query) {
+    const term = query.toLowerCase();
+    const rows = document.querySelectorAll("#subjectsTableBody tr");
+
+    rows.forEach(row => {
+        const name = row.cells[1]?.textContent?.toLowerCase() || "";
+        const code = row.cells[0]?.textContent?.toLowerCase() || "";
+        row.style.display = name.includes(term) || code.includes(term) ? "" : "none";
+    });
+}
+
+// 🆕 Handle adding a new subject
 async function handleAddSubject(e) {
-  e.preventDefault();
+    e.preventDefault();
+    setLoading("addSubjectBtn", true, "Add Course");
 
-  const form = document.getElementById('addSubjectForm');
-  const formData = getFormData('addSubjectForm');
+    const data = getFormData("addSubjectForm");
 
-  if (!formData.code || !formData.name) {
-    showAlert('Please fill in all required fields.', 'warning');
-    return;
-  }
+    try {
+        const result = await apiCall("/subjects/create", "POST", {
+            name: data.name,
+            code: data.code,
+            level: data.level || "",
+            units: data.units || "",
+            semester: data.semester || "",
+        });
 
-  try {
-    setLoading('saveSubjectBtn', true);
+        showAlert("Course added successfully!", "success");
+        document.getElementById("addSubjectForm").reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("addSubjectModal"));
+        modal.hide();
+        await loadSubjects();
+    } catch (err) {
+        showAlert("Failed to add course.", "danger");
+    } finally {
+        setLoading("addSubjectBtn", false, "Add Course");
+    }
+}
 
-    const res = await apiCall('/subjects/create', 'POST', formData);
-    if (res && res._id) {
-      showAlert('Course added successfully!', 'success');
-      bootstrap.Modal.getInstance(document.getElementById('addSubjectModal')).hide();
-      loadSubjects();
-    } else {
-      throw new Error('Failed to add subject.');
+// 🗑 Delete subject
+async function deleteSubject(id) {
+    if (!confirm("Are you sure you want to delete this course?")) return;
+
+    try {
+        const res = await apiCall(`/subjects/${id}`, "DELETE");
+        showAlert("Course deleted successfully", "success");
+        await loadSubjects();
+    } catch (err) {
+        showAlert("Failed to delete course", "danger");
+    }
+}
+
+// ✏️ Edit subject (Not implemented in backend yet)
+function editSubject(id) {
+    showAlert("Edit functionality not implemented yet.", "info");
+}
+
+// ⬇️ Export subjects to CSV
+function exportSubjectsToCSV() {
+    const rows = Array.from(document.querySelectorAll("#subjectsTableBody tr"))
+        .map(tr => Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim()));
+
+    if (rows.length === 0 || rows[0][0] === "No courses found.") {
+        showAlert("No course data to export", "warning");
+        return;
     }
 
-  } catch (err) {
-    showAlert(err.message, 'danger');
-  } finally {
-    setLoading('saveSubjectBtn', false);
-  }
-}
+    const headers = ["Course Code", "Course Name", "Level", "Credit Units", "Semester"];
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(value => `"${value.replace(/"/g, '""')}"`).join(","))
+        .join("\n");
 
-async function deleteSubject(id, name) {
-  if (!confirm(`Delete ${name}? This action cannot be undone.`)) return;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
 
-  try {
-    const res = await apiCall(`/subjects/${id}`, 'DELETE');
-    if (res.success) {
-      showAlert('Course deleted successfully.', 'success');
-      loadSubjects();
-    } else {
-      throw new Error(res.message || 'Failed to delete.');
-    }
-  } catch (err) {
-    showAlert(err.message, 'danger');
-  }
-}
-
-// 🔧 Utils
-function getFormData(formId) {
-  const form = document.getElementById(formId);
-  const formData = new FormData(form);
-  return Object.fromEntries(formData.entries());
-}
-
-async function apiCall(endpoint, method = 'GET', data = null) {
-  const url = `https://bravetosmart.onrender.com/api${endpoint}`;
-  const options = {
-    method,
-    headers: { 'Content-Type': 'application/json' }
-  };
-  if (data) options.body = JSON.stringify(data);
-  const res = await fetch(url, options);
-  return await res.json();
-}
-
-function escapeHtml(text) {
-  return text?.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) || '';
-}
-
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  if (btn) btn.disabled = loading;
-}
-
-function showAlert(msg, type = 'info') {
-  const container = document.getElementById('alertContainer');
-  if (!container) return;
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type} alert-dismissible fade show`;
-  alert.role = 'alert';
-  alert.innerHTML = `
-    ${msg}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  container.appendChild(alert);
-  setTimeout(() => alert.remove(), 5000);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "courses.csv");
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
