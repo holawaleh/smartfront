@@ -9,14 +9,16 @@ const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 const API_BASE = "https://bravetosmart.onrender.com/api";
 
-
 let sessionTimeoutId = null;
-
 let authToken = localStorage.getItem(TOKEN_KEY);
 let currentUser = JSON.parse(localStorage.getItem(USER_KEY) || "{}");
 
-// === UTILITIES ===
+// ✅ Expose token getter globally
+function getAuthToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
 
+// === UTILITIES ===
 function getFormData(formId) {
     const form = document.getElementById(formId);
     const data = new FormData(form);
@@ -53,7 +55,6 @@ function showAlert(message, type = "info") {
 }
 
 // === SESSION TIMEOUT ===
-
 function resetSessionTimeout() {
     if (sessionTimeoutId) clearTimeout(sessionTimeoutId);
     sessionTimeoutId = setTimeout(() => {
@@ -63,9 +64,8 @@ function resetSessionTimeout() {
 }
 
 // === AUTH CHECK ===
-
 function checkAuth() {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = getAuthToken();
     const user = JSON.parse(localStorage.getItem(USER_KEY) || "{}");
 
     if (!token || !user || !user.username) {
@@ -81,7 +81,6 @@ function checkAuth() {
 }
 
 // === LOGOUT ===
-
 function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -90,11 +89,8 @@ function logout() {
 }
 
 // === API CALL ===
-
 async function apiCall(endpoint, method = "GET", body = null) {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    // Fix: Prepend API_BASE to the endpoint
+    const token = getAuthToken();
     const fullUrl = `${API_BASE}${endpoint}`;
 
     const headers = {
@@ -113,7 +109,6 @@ async function apiCall(endpoint, method = "GET", body = null) {
 
     try {
         const res = await fetch(fullUrl, options);
-
         const contentType = res.headers.get("Content-Type");
 
         if (!res.ok) {
@@ -134,15 +129,13 @@ async function apiCall(endpoint, method = "GET", body = null) {
 }
 
 // === LOGIN HANDLER ===
-
 async function handleLogin(e) {
     e.preventDefault();
     setLoading("loginBtn", true);
-
     const formData = getFormData("loginForm");
 
     try {
-       const response = await fetch(`${API_BASE}/auth/login`, {
+        const response = await fetch(`${API_BASE}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(formData),
@@ -168,7 +161,6 @@ async function handleLogin(e) {
 }
 
 // === TOGGLE PASSWORD VISIBILITY ===
-
 document.addEventListener("DOMContentLoaded", () => {
     const togglePassword = document.getElementById("togglePassword");
     if (togglePassword) {
@@ -181,20 +173,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const loginForm = document.getElementById("loginForm");
-    if (loginForm) {
-        loginForm.addEventListener("submit", handleLogin);
-    }
+    if (loginForm) loginForm.addEventListener("submit", handleLogin);
 
-    // Run auth check if on a protected page
-    if (document.body.classList.contains("protected")) {
-        checkAuth();
-    }
+    if (document.body.classList.contains("protected")) checkAuth();
 });
 
-// === AUTO LOGIN CHECK ON PAGE LOAD ===
-
+// === AUTO LOGIN ===
 function autoLoginCheck() {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = getAuthToken();
     const user = localStorage.getItem(USER_KEY);
 
     if (token && user) {
@@ -203,10 +189,8 @@ function autoLoginCheck() {
         resetSessionTimeout();
     }
 }
-
 autoLoginCheck();
 
-// Reset session on any user activity
 document.addEventListener("click", resetSessionTimeout);
 document.addEventListener("keypress", resetSessionTimeout);
 document.addEventListener("scroll", resetSessionTimeout);
