@@ -10,36 +10,41 @@ function initializeLogsPage() {
 }
 
 async function loadLogs() {
-  try {
-    const res = await apiCall("/logs");
-    const logs = Array.isArray(res) ? res : (res?.data || []);
+  const tableBody = document.getElementById("logsTableBody");
+  tableBody.innerHTML = `
+    <tr>
+      <td colspan="5" class="text-center text-muted">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-2">Loading scan logs...</p>
+      </td>
+    </tr>`;
 
-    const tableBody = document.querySelector("#logsTable tbody");
+  try {
+    const logs = await apiCall("/logs");
     tableBody.innerHTML = "";
 
-    if (logs.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No logs found</td></tr>`;
+    if (!logs.length) {
+      tableBody.innerHTML = `
+        <tr><td colspan="5" class="text-center text-muted">No logs found</td></tr>
+      `;
       return;
     }
 
-    logs.forEach((log, index) => {
+    logs.forEach(log => {
       const row = document.createElement("tr");
 
-      const studentName = log.student?.name || "N/A";
-      const matricNo = log.student?.matricNo || "N/A";
-      const action = log.action || "—";
+      const timestamp = formatDateTime(log.createdAt);
+      const name = log.student?.name || "Unknown";
+      const subject = log.subject || "—";
+      const uid = log.uid || "—";
       const status = log.status || "—";
-      const time = formatDateTime(log.createdAt);
-      const user = log.user?.username || "System";
 
       row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${studentName}</td>
-        <td>${matricNo}</td>
-        <td>${action}</td>
+        <td>${timestamp}</td>
+        <td>${name}</td>
+        <td>${subject}</td>
+        <td>${uid}</td>
         <td><span class="badge bg-${status === 'success' ? 'success' : 'danger'}">${status}</span></td>
-        <td>${time}</td>
-        <td>${user}</td>
       `;
 
       tableBody.appendChild(row);
@@ -47,10 +52,13 @@ async function loadLogs() {
   } catch (err) {
     console.error("Error loading logs:", err);
     showAlert("Failed to load logs", "danger");
+    tableBody.innerHTML = `
+      <tr><td colspan="5" class="text-center text-danger">Failed to load logs</td></tr>
+    `;
   }
 }
 
-// Helper functions (assuming these are available globally or imported)
+// Optional: Reuse global auth helpers
 function checkAuth() {
   const token = localStorage.getItem("authToken");
   if (!token) {
@@ -73,12 +81,7 @@ function showAlert(message, type = "info") {
 }
 
 function formatDateTime(timestamp) {
-  if (!timestamp) return "Unknown";
-  const now = new Date();
-  const then = new Date(timestamp);
-  const diffMs = now - then;
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  return then.toLocaleString();
+  if (!timestamp) return "—";
+  const date = new Date(timestamp);
+  return date.toLocaleString();
 }
