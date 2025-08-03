@@ -48,13 +48,15 @@ async function loadSubjects() {
         `;
         
         const response = await apiCall('/subjects', 'GET');
-        
-        if (response.success) {
-            subjectsData = response.data || [];
-            displaySubjects(subjectsData);
-        } else {
-            throw new Error(response.error || 'Failed to load subjects');
-        }
+
+// If response is an array, we assume it is the list of subjects
+if (Array.isArray(response)) {
+    subjectsData = response;
+    displaySubjects(subjectsData);
+} else {
+    throw new Error('Unexpected response format while loading subjects');
+}
+
         
     } catch (error) {
         console.error('Error loading subjects:', error);
