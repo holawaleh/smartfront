@@ -44,7 +44,7 @@ function showAlert(message, type = "info") {
 
 
 function logout() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');  // ✅ Fix key
+    localStorage.removeItem('currentUser'); // If used
     window.location.href = 'login.html';
 }
