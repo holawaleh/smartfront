@@ -1,3 +1,27 @@
+const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
+
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleString();
+}
+
+async function apiCall(endpoint, method = 'GET', data = null) {
+  const token = getAuthToken(); // from auth.js
+  const config = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  };
+  if (data) config.body = JSON.stringify(data);
+
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'API call failed');
+  return json.data || json;
+}
+
 async function loadLogs() {
   const tableBody = document.getElementById("logsTableBody");
   if (!tableBody) return;
@@ -10,6 +34,8 @@ async function loadLogs() {
 
   try {
     const data = await apiCall('/logs');
+    console.log("✅ Logs loaded:", data);
+
     if (!Array.isArray(data) || data.length === 0) {
       tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No logs found</td></tr>`;
       return;
@@ -29,7 +55,7 @@ async function loadLogs() {
       </tr>
     `).join('');
   } catch (err) {
-    console.error("Error loading logs:", err);
+    console.error("❌ Error loading logs:", err);
     showAlert("Failed to load logs", "danger");
   }
 }
@@ -46,6 +72,7 @@ async function loadLogsSummary() {
 
   try {
     const data = await apiCall('/logs/summary');
+    console.log("✅ Summary data:", data);
 
     summaryContent.innerHTML = `
       <p><strong>Total Logs:</strong> ${data.totalLogs}</p>
@@ -64,6 +91,7 @@ async function loadLogsSummary() {
 
     new bootstrap.Modal(document.getElementById('summaryModal')).show();
   } catch (err) {
+    console.error("❌ Failed to load summary:", err);
     summaryContent.innerHTML = `<p class="text-danger">Failed to load summary</p>`;
     showAlert("Could not load summary", "danger");
   }
