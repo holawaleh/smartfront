@@ -3,7 +3,7 @@
 let analyticsData = {
     logs: [],
     students: [],
-    subjects: []
+    Courses: []
 };
 
 let charts = {};
@@ -63,10 +63,10 @@ async function loadAnalyticsData() {
         showLoadingState();
         
         // Load all required data
-        const [logsResponse, studentsResponse, subjectsResponse] = await Promise.all([
+        const [logsResponse, studentsResponse, CoursesResponse] = await Promise.all([
             apiCall('/logs', 'GET'),
             apiCall('/students', 'GET'),
-            apiCall('/subjects', 'GET')
+            apiCall('/Courses', 'GET')
         ]);
         
         if (logsResponse.success) {
@@ -75,8 +75,8 @@ async function loadAnalyticsData() {
         if (studentsResponse.success) {
             analyticsData.students = studentsResponse.data || [];
         }
-        if (subjectsResponse.success) {
-            analyticsData.subjects = subjectsResponse.data || [];
+        if (CoursesResponse.success) {
+            analyticsData.Courses = CoursesResponse.data || [];
         }
         
         // Generate charts
@@ -90,9 +90,9 @@ async function loadAnalyticsData() {
 
 function showLoadingState() {
     const chartIds = [
-        'weeklySubjectChart',
+        'weeklyCourseChart',
         'monthlyStudentChart',
-        'subjectDistributionChart',
+        'CourseDistributionChart',
         'dailyActivityChart',
         'topStudentsChart',
         'departmentChart'
@@ -122,9 +122,9 @@ function updateCharts() {
     charts = {};
     
     // Generate all charts
-    generateWeeklySubjectChart(filteredLogs);
+    generateWeeklyCourseChart(filteredLogs);
     generateMonthlyStudentChart(filteredLogs);
-    generateSubjectDistributionChart(filteredLogs);
+    generateCourseDistributionChart(filteredLogs);
     generateDailyActivityChart(filteredLogs);
     generateTopStudentsChart(filteredLogs);
     generateDepartmentChart(filteredLogs);
@@ -154,42 +154,42 @@ function getFilteredLogs() {
     return filtered;
 }
 
-function generateWeeklySubjectChart(logs) {
-    const ctx = document.getElementById('weeklySubjectChart')?.getContext('2d');
+function generateWeeklyCourseChart(logs) {
+    const ctx = document.getElementById('weeklyCourseChart')?.getContext('2d');
     if (!ctx) return;
     
-    // Group logs by week and subject
+    // Group logs by week and Course
     const weeklyData = {};
     
     logs.forEach(log => {
         const date = new Date(log.timestamp);
         const weekStart = getWeekStart(date);
         const weekKey = weekStart.toISOString().split('T')[0];
-        const subject = log.subject || 'Unknown Subject';
+        const Course= log.Course|| 'Unknown Course';
         
         if (!weeklyData[weekKey]) {
             weeklyData[weekKey] = {};
         }
         
-        weeklyData[weekKey][subject] = (weeklyData[weekKey][subject] || 0) + 1;
+        weeklyData[weekKey][Course] = (weeklyData[weekKey][Course] || 0) + 1;
     });
     
-    // Get all unique subjects
-    const allSubjects = [...new Set(logs.map(log => log.subject || 'Unknown Subject'))]
-        .slice(0, 10); // Limit to top 10 subjects
+    // Get all unique Courses
+    const allCourses = [...new Set(logs.map(log => log.Course|| 'Unknown Course'))]
+        .slice(0, 10); // Limit to top 10 Courses
     
     // Prepare data for chart
     const weeks = Object.keys(weeklyData).sort().slice(-8); // Last 8 weeks
-    const datasets = allSubjects.map((subject, index) => ({
-        label: subject,
-        data: weeks.map(week => weeklyData[week]?.[subject] || 0),
+    const datasets = allCourses.map((Course, index) => ({
+        label: Course,
+        data: weeks.map(week => weeklyData[week]?.[Course] || 0),
         backgroundColor: getChartColor(index, 0.7),
         borderColor: getChartColor(index, 1),
         borderWidth: 2,
         tension: 0.4
     }));
     
-    charts.weeklySubject = new Chart(ctx, {
+    charts.weeklyCourse= new Chart(ctx, {
         type: 'line',
         data: {
             labels: weeks.map(week => formatDate(week)),
@@ -201,7 +201,7 @@ function generateWeeklySubjectChart(logs) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Weekly Subject Scan Frequency',
+                    text: 'Weekly CourseScan Frequency',
                     color: '#ffffff'
                 },
                 legend: {
@@ -308,30 +308,30 @@ function generateMonthlyStudentChart(logs) {
     });
 }
 
-function generateSubjectDistributionChart(logs) {
-    const ctx = document.getElementById('subjectDistributionChart')?.getContext('2d');
+function generateCourseDistributionChart(logs) {
+    const ctx = document.getElementById('CourseDistributionChart')?.getContext('2d');
     if (!ctx) return;
     
-    // Count scans per subject
-    const subjectCounts = {};
+    // Count scans per Course
+    const CourseCounts = {};
     logs.forEach(log => {
-        const subject = log.subject || 'Unknown Subject';
-        subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+        const Course= log.Course|| 'Unknown Course';
+        CourseCounts[Course] = (CourseCounts[Course] || 0) + 1;
     });
     
-    // Get top 10 subjects
-    const topSubjects = Object.entries(subjectCounts)
+    // Get top 10 Courses
+    const topCourses = Object.entries(CourseCounts)
         .sort(([,a], [,b]) => b - a)
         .slice(0, 10);
     
-    charts.subjectDistribution = new Chart(ctx, {
+    charts.CourseDistribution = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: topSubjects.map(([subject]) => subject),
+            labels: topCourses.map(([Course]) => Course),
             datasets: [{
-                data: topSubjects.map(([, count]) => count),
-                backgroundColor: topSubjects.map((_, index) => getChartColor(index, 0.8)),
-                borderColor: topSubjects.map((_, index) => getChartColor(index, 1)),
+                data: topCourses.map(([, count]) => count),
+                backgroundColor: topCourses.map((_, index) => getChartColor(index, 0.8)),
+                borderColor: topCourses.map((_, index) => getChartColor(index, 1)),
                 borderWidth: 2
             }]
         },
@@ -341,7 +341,7 @@ function generateSubjectDistributionChart(logs) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Subject Scan Distribution',
+                    text: 'CourseScan Distribution',
                     color: '#ffffff'
                 },
                 legend: {
@@ -560,7 +560,7 @@ function updateAnalyticsStats(logs) {
     // Calculate statistics
     const totalScans = logs.length;
     const uniqueStudents = new Set(logs.map(log => log.studentName || log.matricNo)).size;
-    const uniqueSubjects = new Set(logs.map(log => log.subject)).size;
+    const uniqueCourses = new Set(logs.map(log => log.Course)).size;
     
     // Calculate average scans per day
     const dateRange = getDateRangeFromLogs(logs);
@@ -570,7 +570,7 @@ function updateAnalyticsStats(logs) {
     // Update DOM elements
     document.getElementById('totalScansCount').textContent = totalScans;
     document.getElementById('activeStudentsCount').textContent = uniqueStudents;
-    document.getElementById('activeSubjectsCount').textContent = uniqueSubjects;
+    document.getElementById('activeCoursesCount').textContent = uniqueCourses;
     document.getElementById('avgScansPerDay').textContent = avgScansPerDay;
 }
 
@@ -625,7 +625,7 @@ function exportChartsData() {
         statistics: {
             totalScans: filteredLogs.length,
             uniqueStudents: new Set(filteredLogs.map(log => log.studentName)).size,
-            uniqueSubjects: new Set(filteredLogs.map(log => log.subject)).size
+            uniqueCourses: new Set(filteredLogs.map(log => log.Course)).size
         },
         data: filteredLogs
     };

@@ -24,7 +24,7 @@ function setupEventListeners() {
     document.getElementById('dateFrom')?.addEventListener('change', applyFilters);
     document.getElementById('dateTo')?.addEventListener('change', applyFilters);
     document.getElementById('studentFilter')?.addEventListener('input', applyFilters);
-    document.getElementById('subjectFilter')?.addEventListener('input', applyFilters);
+    document.getElementById('CourseFilter')?.addEventListener('input', applyFilters);
 }
 
 function setDefaultDateRange() {
@@ -124,8 +124,8 @@ function displayLogs(logs) {
                 <div class="d-flex align-items-center">
                     <i class="fas fa-book me-2 text-success"></i>
                     <div>
-                        <strong>${escapeHtml(log.subject || 'Unknown Subject')}</strong>
-                        ${log.subjectCode ? `<br><small class="text-muted">${escapeHtml(log.subjectCode)}</small>` : ''}
+                        <strong>${escapeHtml(log.Course|| 'Unknown Course')}</strong>
+                        ${log.CourseCode ? `<br><small class="text-muted">${escapeHtml(log.CourseCode)}</small>` : ''}
                     </div>
                 </div>
             </td>
@@ -208,12 +208,12 @@ function applyFilters() {
         );
     }
     
-    // Subject filter
-    const subjectFilter = document.getElementById('subjectFilter')?.value?.toLowerCase();
-    if (subjectFilter) {
+    // Coursefilter
+    const CourseFilter = document.getElementById('CourseFilter')?.value?.toLowerCase();
+    if (CourseFilter) {
         filtered = filtered.filter(log => 
-            (log.subject && log.subject.toLowerCase().includes(subjectFilter)) ||
-            (log.subjectCode && log.subjectCode.toLowerCase().includes(subjectFilter))
+            (log.Course&& log.Course.toLowerCase().includes(CourseFilter)) ||
+            (log.CourseCode && log.CourseCode.toLowerCase().includes(CourseFilter))
         );
     }
     
@@ -226,7 +226,7 @@ function clearFilters() {
     document.getElementById('dateFrom').value = '';
     document.getElementById('dateTo').value = '';
     document.getElementById('studentFilter').value = '';
-    document.getElementById('subjectFilter').value = '';
+    document.getElementById('CourseFilter').value = '';
     
     // Reset default date range
     setDefaultDateRange();
@@ -302,8 +302,8 @@ function displayLogsSummary(summaryData) {
             <div class="col-md-3">
                 <div class="card bg-info text-white">
                     <div class="card-body text-center">
-                        <h3>${summary.uniqueSubjects || getUniqueSubjectsCount()}</h3>
-                        <p class="mb-0">Unique Subjects</p>
+                        <h3>${summary.uniqueCourses || getUniqueCoursesCount()}</h3>
+                        <p class="mb-0">Unique Courses</p>
                     </div>
                 </div>
             </div>
@@ -333,15 +333,15 @@ function displayLogsSummary(summaryData) {
                 </div>
             </div>
             <div class="col-md-6">
-                <h5><i class="fas fa-book me-2"></i>Popular Subjects</h5>
+                <h5><i class="fas fa-book me-2"></i>Popular Courses</h5>
                 <div class="list-group">
-                    ${getPopularSubjects().map(subject => `
+                    ${getPopularCourses().map(Course=> `
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>${escapeHtml(subject.name)}</strong>
-                                <br><small class="text-muted">${escapeHtml(subject.code || '')}</small>
+                                <strong>${escapeHtml(Course.name)}</strong>
+                                <br><small class="text-muted">${escapeHtml(Course.code || '')}</small>
                             </div>
-                            <span class="badge bg-success rounded-pill">${subject.count}</span>
+                            <span class="badge bg-success rounded-pill">${Course.count}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -367,7 +367,7 @@ function generateSummaryFromLogs() {
     return {
         totalScans: filteredLogsData.length,
         uniqueStudents: getUniqueStudentsCount(),
-        uniqueSubjects: getUniqueSubjectsCount(),
+        uniqueCourses: getUniqueCoursesCount(),
         todayScans: getTodayScansCount()
     };
 }
@@ -382,14 +382,14 @@ function getUniqueStudentsCount() {
     return uniqueStudents.size;
 }
 
-function getUniqueSubjectsCount() {
-    const uniqueSubjects = new Set();
+function getUniqueCoursesCount() {
+    const uniqueCourses = new Set();
     filteredLogsData.forEach(log => {
-        if (log.subject || log.subjectCode) {
-            uniqueSubjects.add(log.subject || log.subjectCode);
+        if (log.Course|| log.CourseCode) {
+            uniqueCourses.add(log.Course|| log.CourseCode);
         }
     });
-    return uniqueSubjects.size;
+    return uniqueCourses.size;
 }
 
 function getTodayScansCount() {
@@ -421,24 +421,24 @@ function getTopStudents(limit = 5) {
         .slice(0, limit);
 }
 
-function getPopularSubjects(limit = 5) {
-    const subjectCounts = {};
+function getPopularCourses(limit = 5) {
+    const CourseCounts = {};
     
     filteredLogsData.forEach(log => {
-        const key = log.subject || log.subjectCode || 'Unknown';
-        const code = log.subjectCode || '';
+        const key = log.Course|| log.CourseCode || 'Unknown';
+        const code = log.CourseCode || '';
         
-        if (!subjectCounts[key]) {
-            subjectCounts[key] = {
-                name: log.subject || 'Unknown Subject',
+        if (!CourseCounts[key]) {
+            CourseCounts[key] = {
+                name: log.Course|| 'Unknown Course',
                 code: code,
                 count: 0
             };
         }
-        subjectCounts[key].count++;
+        CourseCounts[key].count++;
     });
     
-    return Object.values(subjectCounts)
+    return Object.values(CourseCounts)
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
 }
@@ -491,13 +491,13 @@ function exportLogsToCSV() {
         return;
     }
     
-    const csvHeaders = ['Timestamp', 'Student Name', 'Matric No', 'Subject', 'Subject Code', 'UID', 'Status'];
+    const csvHeaders = ['Timestamp', 'Student Name', 'Matric No', 'Course', 'CourseCode', 'UID', 'Status'];
     const csvRows = filteredLogsData.map(log => [
         log.timestamp || '',
         log.studentName || '',
         log.matricNo || '',
-        log.subject || '',
-        log.subjectCode || '',
+        log.Course|| '',
+        log.CourseCode || '',
         log.uid || '',
         log.status || ''
     ]);

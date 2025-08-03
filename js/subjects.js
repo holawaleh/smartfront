@@ -16,7 +16,7 @@ function initializeSubjectsPage() {
 }
 
 function setupEventListeners() {
-    // Add subject form
+    // Add Courseform
     const addSubjectForm = document.getElementById('addSubjectForm');
     if (addSubjectForm) {
         addSubjectForm.addEventListener('submit', handleAddSubject);
@@ -88,7 +88,7 @@ function displaySubjects(subjects) {
         return;
     }
     
-    tableBody.innerHTML = subjects.map(subject => `
+    tableBody.innerHTML = subjects.map(Course=> `
         <tr>
             <td>
                 <strong>${escapeHtml(subject.code || '')}</strong>
@@ -129,9 +129,9 @@ async function handleAddSubject(event) {
     const saveBtn = document.getElementById('saveSubjectBtn');
     const saveSpinner = document.getElementById('saveSpinner');
     
-    // Validate subject code format
+    // Validate Coursecode format
     if (!isValidSubjectCode(formData.code)) {
-        showAlert('Subject code should be in format like CSC101, MTH201, etc.', 'danger');
+        showAlert('Coursecode should be in format like CSC101, MTH201, etc.', 'danger');
         return;
     }
     
@@ -142,7 +142,7 @@ async function handleAddSubject(event) {
         const response = await apiCall('/subjects', 'POST', formData);
         
         if (response.success) {
-            showAlert('Subject added successfully!', 'success');
+            showAlert('Courseadded successfully!', 'success');
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addSubjectModal'));
@@ -165,7 +165,7 @@ async function handleAddSubject(event) {
 }
 
 async function deleteSubject(subjectId, subjectName) {
-    if (!confirm(`Are you sure you want to delete subject "${subjectName}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete Course"${subjectName}"? This action cannot be undone.`)) {
         return;
     }
     
@@ -173,7 +173,7 @@ async function deleteSubject(subjectId, subjectName) {
         const response = await apiCall(`/subjects/${subjectId}`, 'DELETE');
         
         if (response.success) {
-            showAlert('Subject deleted successfully!', 'success');
+            showAlert('Coursedeleted successfully!', 'success');
             await loadSubjects();
         } else {
             throw new Error(response.error || 'Failed to delete subject');
@@ -187,14 +187,14 @@ async function deleteSubject(subjectId, subjectName) {
 
 // Validation functions
 function isValidSubjectCode(code) {
-    // Subject code should be like CSC101, MTH201, etc.
+    // Coursecode should be like CSC101, MTH201, etc.
     const codeRegex = /^[A-Z]{2,4}\d{3}$/;
     return codeRegex.test(code.toUpperCase());
 }
 
 // Search and filter functions
 function searchSubjects(searchTerm) {
-    const filteredSubjects = subjectsData.filter(subject => {
+    const filteredSubjects = subjectsData.filter(Course=> {
         const searchLower = searchTerm.toLowerCase();
         return (
             (subject.code && subject.code.toLowerCase().includes(searchLower)) ||
@@ -212,7 +212,7 @@ function filterSubjectsByLevel(level) {
         return;
     }
     
-    const filteredSubjects = subjectsData.filter(subject => subject.level === level);
+    const filteredSubjects = subjectsData.filter(Course=> subject.level === level);
     displaySubjects(filteredSubjects);
 }
 
@@ -222,7 +222,7 @@ function filterSubjectsByDepartment(department) {
         return;
     }
     
-    const filteredSubjects = subjectsData.filter(subject => 
+    const filteredSubjects = subjectsData.filter(Course=> 
         subject.department && subject.department.toLowerCase().includes(department.toLowerCase())
     );
     displaySubjects(filteredSubjects);
@@ -234,7 +234,7 @@ function filterSubjectsByCreditUnits(creditUnits) {
         return;
     }
     
-    const filteredSubjects = subjectsData.filter(subject => 
+    const filteredSubjects = subjectsData.filter(Course=> 
         subject.creditUnits == creditUnits
     );
     displaySubjects(filteredSubjects);
@@ -259,7 +259,7 @@ function getSubjectsStatistics() {
     };
     
     // Calculate level distribution
-    subjectsData.forEach(subject => {
+    subjectsData.forEach(Course=> {
         const level = subject.level || 'Unknown';
         stats.levelDistribution[level] = (stats.levelDistribution[level] || 0) + 1;
     });
@@ -311,8 +311,8 @@ function exportSubjectsToCSV() {
         return;
     }
     
-    const csvHeaders = ['Subject Code', 'Subject Name', 'Credit Units', 'Department', 'Level'];
-    const csvRows = subjectsData.map(subject => [
+    const csvHeaders = ['CourseCode', 'CourseName', 'Credit Units', 'Department', 'Level'];
+    const csvRows = subjectsData.map(Course=> [
         subject.code || '',
         subject.name || '',
         subject.creditUnits || '',
