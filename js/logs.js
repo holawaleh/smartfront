@@ -549,5 +549,5 @@ function escapeHtml(text) {
 // Initialize real-time updates when page loads
 document.addEventListener('DOMContentLoaded', function() {
     // Uncomment if you want real-time updates
-    // startRealTimeUpdates();
+    startRealTimeUpdates();
 });
