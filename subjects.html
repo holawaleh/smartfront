@@ -2,11 +2,11 @@
 <html lang="en" data-bs-theme="dark">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subjects - Student Management System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <style>
         .card {
             border-radius: 15px;
@@ -33,16 +33,13 @@
 </head>
 
 <body class="protected">
-    <!-- Alert Container -->
     <div id="alertContainer" class="position-fixed top-0 start-50 translate-middle-x alert-container"
         style="z-index: 9999; margin-top: 20px;"></div>
 
-    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand" href="dashboard.html">
-                <i class="fas fa-graduation-cap me-2"></i>
-                Student Management System
+                <i class="fas fa-graduation-cap me-2"></i>Student Management System
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -51,43 +48,25 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard.html">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="students.html">
-                            <i class="fas fa-users me-1"></i>Students
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="subjects.html">
-                            <i class="fas fa-book me-1"></i>Subjects
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logs.html">
-                            <i class="fas fa-clipboard-list me-1"></i>Scan Logs
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="analytics.html">
-                            <i class="fas fa-chart-line me-1"></i>Analytics
-                        </a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html"><i
+                                class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="students.html"><i
+                                class="fas fa-users me-1"></i>Students</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="subjects.html"><i
+                                class="fas fa-book me-1"></i>Subjects</a></li>
+                    <li class="nav-item"><a class="nav-link" href="logs.html"><i
+                                class="fas fa-clipboard-list me-1"></i>Scan Logs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="analytics.html"><i
+                                class="fas fa-chart-line me-1"></i>Analytics</a></li>
                 </ul>
-
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i>
-                            <span id="userDisplayName">Admin</span>
+                            <i class="fas fa-user me-1"></i><span id="userDisplayName">Admin</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="logout()">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -95,15 +74,11 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <div class="container-fluid mt-4">
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>
-                        <i class="fas fa-book me-2"></i>
-                        Subject Management
-                    </h2>
+                    <h2><i class="fas fa-book me-2"></i>Subject Management</h2>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
                         <i class="fas fa-plus me-2"></i>Add Subject
                     </button>
@@ -111,24 +86,21 @@
             </div>
         </div>
 
-        <!-- Search and Filter -->
         <div class="row mb-4">
             <div class="col-md-6">
                 <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="fas fa-search"></i>
-                    </span>
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" placeholder="Search subjects..."
-                        onkeyup="searchSubjects(this.value)">
+                        onkeyup="searchSubjects(this.value)" />
                 </div>
             </div>
             <div class="col-md-3">
                 <select class="form-select" onchange="filterSubjectsByLevel(this.value)">
                     <option value="">All Levels</option>
-                    <option value="100">100 Level</option>
-                    <option value="200">200 Level</option>
-                    <option value="300">300 Level</option>
-                    <option value="400">400 Level</option>
+                    <option value="OND1 FT">OND1 FT</option>
+                    <option value="OND1 PT">OND1 PT</option>
+                    <option value="HND1 FT">HND1 FT</option>
+                    <option value="HND2 PT">HND2 PT</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -138,15 +110,11 @@
             </div>
         </div>
 
-        <!-- Subjects Table -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Subjects List
-                        </h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-list me-2"></i>Subjects List</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -182,39 +150,33 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-plus me-2"></i>Add New Subject
-                    </h5>
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Add New Subject</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addSubjectForm">
                         <div class="mb-3">
                             <label for="subjectCode" class="form-label">Subject Code *</label>
-                            <input type="text" class="form-control" id="subjectCode" name="subjectCode" required>
+                            <input type="text" class="form-control" id="subjectCode" name="subjectCode" required />
                         </div>
                         <div class="mb-3">
                             <label for="subjectName" class="form-label">Subject Name *</label>
-                            <input type="text" class="form-control" id="subjectName" name="subjectName" required>
+                            <input type="text" class="form-control" id="subjectName" name="subjectName" required />
                         </div>
                         <div class="mb-3">
                             <label for="level" class="form-label">Level *</label>
                             <select class="form-select" id="level" name="level" required>
                                 <option value="">Select Level</option>
-                                <option value="100">100 Level</option>
-                                <option value="200">200 Level</option>
-                                <option value="300">300 Level</option>
-                                <option value="400">400 Level</option>
+                                <option value="OND1 FT">OND1 FT</option>
+                                <option value="OND1 PT">OND1 PT</option>
+                                <option value="HND1 FT">HND1 FT</option>
+                                <option value="HND2 PT">HND2 PT</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="creditUnits" class="form-label">Credit Units *</label>
                             <input type="number" class="form-control" id="creditUnits" name="creditUnits" min="1"
-                                max="6" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="department" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="department" name="department">
+                                max="6" required />
                         </div>
                         <div class="mb-3">
                             <label for="semester" class="form-label">Semester</label>
@@ -241,40 +203,34 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-edit me-2"></i>Edit Subject
-                    </h5>
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Subject</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editSubjectForm">
-                        <input type="hidden" id="editSubjectId" name="id">
+                        <input type="hidden" id="editSubjectId" name="id" />
                         <div class="mb-3">
                             <label for="editSubjectCode" class="form-label">Subject Code *</label>
-                            <input type="text" class="form-control" id="editSubjectCode" name="subjectCode" required>
+                            <input type="text" class="form-control" id="editSubjectCode" name="subjectCode" required />
                         </div>
                         <div class="mb-3">
                             <label for="editSubjectName" class="form-label">Subject Name *</label>
-                            <input type="text" class="form-control" id="editSubjectName" name="subjectName" required>
+                            <input type="text" class="form-control" id="editSubjectName" name="subjectName" required />
                         </div>
                         <div class="mb-3">
                             <label for="editLevel" class="form-label">Level *</label>
                             <select class="form-select" id="editLevel" name="level" required>
                                 <option value="">Select Level</option>
-                                <option value="100">100 Level</option>
-                                <option value="200">200 Level</option>
-                                <option value="300">300 Level</option>
-                                <option value="400">400 Level</option>
+                                <option value="OND1 FT">OND1 FT</option>
+                                <option value="OND1 PT">OND1 PT</option>
+                                <option value="HND1 FT">HND1 FT</option>
+                                <option value="HND2 PT">HND2 PT</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="editCreditUnits" class="form-label">Credit Units *</label>
                             <input type="number" class="form-control" id="editCreditUnits" name="creditUnits" min="1"
-                                max="6" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editDepartment" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="editDepartment" name="department">
+                                max="6" required />
                         </div>
                         <div class="mb-3">
                             <label for="editSemester" class="form-label">Semester</label>
@@ -296,10 +252,9 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/auth.js"></script> <!-- Load auth.js FIRST -->
-    <script src="js/subjects.js"></script> <!-- Then load subjects.js -->
+    <script src="js/auth.js"></script>
+    <script src="js/subjects.js"></script>
 </body>
 
 </html>
