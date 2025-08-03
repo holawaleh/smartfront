@@ -391,8 +391,7 @@
         // ✅ FIX: GET /api returns students, not /students
         async function loadStudentsCount() {
             try {
-                const data = await apiCall('/'); // ← Correct endpoint
-                const students = Array.isArray(data) ? data : (data?.data || []);
+                const students = await apiCall('/students');
                 document.getElementById("totalStudents").textContent = students.length.toLocaleString();
             } catch (err) {
                 document.getElementById("totalStudents").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
