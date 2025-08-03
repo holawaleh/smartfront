@@ -73,33 +73,22 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-book me-2"></i>Course Management</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                        <i class="fas fa-plus me-2"></i>Add Course
-                    </button>
-                </div>
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-book me-2"></i>Course Management</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="fas fa-plus me-2"></i>Add Course
+                </button>
             </div>
         </div>
 
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" placeholder="Search courses..."
                         onkeyup="searchSubjects(this.value)" />
                 </div>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" onchange="filterSubjectsByLevel(this.value)">
-                    <option value="">All Levels</option>
-                    <option value="OND1 FT">OND1 FT</option>
-                    <option value="OND1 PT">OND1 PT</option>
-                    <option value="HND1 FT">HND1 FT</option>
-                    <option value="HND2 PT">HND2 PT</option>
-                </select>
             </div>
             <div class="col-md-3">
                 <button class="btn btn-outline-success w-100" onclick="exportSubjectsToCSV()">
@@ -121,16 +110,56 @@
                                     <tr>
                                         <th>Course Code</th>
                                         <th>Course Name</th>
-                                        <th>Level</th>
-                                        <th>Credit Units</th>
-                                        <th>Semester</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="subjectsTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center">
+                                        <td colspan="3" class="text-center">
                                             <div class="spinner-border"></div> Loading courses...
                                         </td>
                                     </tr>
                                 </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Course Modal -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="addSubjectForm" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSubjectModalLabel">Add New Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="subjectCode" class="form-label">Course Code</label>
+                        <input type="text" name="code" id="subjectCode" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="subjectName" class="form-label">Course Name</label>
+                        <input type="text" name="name" id="subjectName" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSubjectBtn" type="submit" class="btn btn-primary">
+                        <span id="saveSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                        Save Course
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/subjects.js"></script>
+    <script src="js/utils.js"></script> <!-- If you store helper functions like apiCall here -->
+</body>
+
+</html>
