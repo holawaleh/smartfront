@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error("Please fill all fields");
                 }
 
-                const result = await apiCall('/register', 'POST', studentData);
+                const result = await apiCall('/students/register', 'POST', studentData);
 
                 if (result) {
                     showAlert("✅ Student added!", "success");
