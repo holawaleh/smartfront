@@ -185,8 +185,7 @@ if (captureUidBtn) {
         }
 
         try {
-            // ✅ Fixed endpoint
-            const response = await fetch("https://bravetosmart.onrender.com/api/get-latest-uid", {
+            const response = await fetch("https://bravetosmart.onrender.com/api/students/get-latest-uid", {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -207,24 +206,16 @@ if (captureUidBtn) {
             if (data.uid) {
                 uidInput.value = data.uid;
                 showAlert(`✅ UID: ${data.uid}`, "success");
+            } else {
+                showAlert("No UID returned", "warning");
             }
         } catch (err) {
             alert("Scan a card first or check connection");
+            console.error("Capture UID Error:", err);
         }
     });
 }
-    window.editStudent = (id) => alert("Edit: " + id);
-    window.deleteStudent = async (id, name) => {
-        if (confirm(`Delete ${name}?`)) {
-            try {
-                await apiCall(`/student/${id}`, 'DELETE');
-                showAlert("✅ Deleted");
-                await loadStudents();
-            } catch (err) {
-                showAlert("❌ Delete failed", "danger");
-            }
-        }
-    };
+
 
     if (checkAuth()) {
         loadStudents();
