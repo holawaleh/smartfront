@@ -66,15 +66,29 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({
-                    message: `HTTP Error: ${response.status}`
-                }));
+                // Attempt to read JSON error body; fall back to text
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    try {
+                        const txt = await response.text();
+                        errorData = { message: txt || `HTTP Error ${response.status}` };
+                    } catch (ee) {
+                        errorData = { message: `HTTP Error ${response.status}` };
+                    }
+                }
+
+                const apiErr = new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+                apiErr.status = response.status;
+                apiErr.statusText = response.statusText;
+                apiErr.data = errorData;
                 console.error('API Error:', {
                     status: response.status,
                     statusText: response.statusText,
                     errorData
                 });
-                throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+                throw apiErr;
             }
 
             return await response.json();
@@ -311,7 +325,22 @@ if (captureUidBtn) {
                 await loadStudents();
             } catch (err) {
                 console.error('Update error:', err);
-                showAlert('Failed to update student: ' + (err.message || ''), 'danger');
+
+                // Prefer backend-provided message / validation errors when available
+                let userMessage = err.message || 'Failed to update student';
+                if (err.data) {
+                    // If backend returned structured errors, show them
+                    if (err.data.errors && Array.isArray(err.data.errors)) {
+                        userMessage = err.data.errors.join('; ');
+                    } else if (err.data.message) {
+                        userMessage = err.data.message;
+                    } else {
+                        // Dump full object for debugging
+                        userMessage = JSON.stringify(err.data);
+                    }
+                }
+
+                showAlert('Failed to update student: ' + userMessage, 'danger');
             } finally {
                 updateSpinner.classList.add('d-none');
                 updateBtn.disabled = false;
