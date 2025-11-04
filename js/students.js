@@ -273,6 +273,10 @@ if (captureUidBtn) {
 
             try {
                 const id = document.getElementById('editStudentId').value;
+                if (!id) {
+                    throw new Error('Student ID is missing');
+                }
+
                 const formData = new FormData(editForm);
                 const formFields = Object.fromEntries(formData);
                 
@@ -281,14 +285,24 @@ if (captureUidBtn) {
                     name: formFields.name?.trim(),
                     matricNo: formFields.matricNo?.trim(),
                     email: formFields.email?.trim(),
-                    level: formFields.level?.trim(),
-                    phone: formFields.phone?.trim(),
-                    department: formFields.department?.trim()
+                    level: formFields.level?.trim() || undefined,
+                    phone: formFields.phone?.trim() || undefined,
+                    department: formFields.department?.trim() || undefined
                 };
                 
                 // Validate required fields
-                if (!payload.name || !payload.matricNo || !payload.email) {
-                    throw new Error('Name, Matric Number and Email are required');
+                const requiredFields = {
+                    name: 'Name',
+                    matricNo: 'Matric Number',
+                    email: 'Email'
+                };
+
+                const missingFields = Object.entries(requiredFields)
+                    .filter(([key]) => !payload[key])
+                    .map(([, label]) => label);
+
+                if (missingFields.length > 0) {
+                    throw new Error(`Required fields missing: ${missingFields.join(', ')}`);
                 }
 
                 await apiCall(`/students/${id}`, 'PUT', payload);
