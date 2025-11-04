@@ -93,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (!Array.isArray(students)) {
                 throw new Error('Invalid response format from server');
+            }
 
             if (students.length === 0) {
                 tbody.innerHTML = `
@@ -275,6 +276,7 @@ if (captureUidBtn) {
                 // Ensure required fields
                 if (!payload.name || !payload.matricNo || !payload.email) {
                     throw new Error('Name, Matric Number and Email are required');
+                }
 
                 await apiCall(`/students/${id}`, 'PUT', payload);
                 showAlert('✅ Student updated', 'success');
