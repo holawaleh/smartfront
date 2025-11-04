@@ -1,47 +1,47 @@
 document.addEventListener("DOMContentLoaded", async () => {
     checkAuth(); // Ensure user is authenticated
 
-    await loadcourses();
+    await loadsubjects();
 
-    const addcourseForm = document.getElementById("addcourseForm");
-    if (addcourseForm) {
-        addcourseForm.addEventListener("submit", handleAddcourse);
+    const addsubjectForm = document.getElementById("addsubjectForm");
+    if (addsubjectForm) {
+        addsubjectForm.addEventListener("submit", handleAddsubject);
     }
 });
 
-async function loadcourses() {
+async function loadsubjects() {
     try {
-        const courses = await apiCall("/courses");
-        displaycourses(courses);
+        const subjects = await apiCall("/subjects");
+        displaysubjects(subjects);
     } catch (err) {
-        showAlert("Failed to load courses", "danger");
+        showAlert("Failed to load subjects", "danger");
     }
 }
 
-function displaycourses(courses) {
-    const tbody = document.getElementById("coursesTableBody");
+function displaysubjects(subjects) {
+    const tbody = document.getElementById("subjectsTableBody");
     if (!tbody) return;
 
-    if (!courses || courses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No courses found.</td></tr>`;
+    if (!subjects || subjects.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No subjects found.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = "";
-    courses.forEach((course, index) => {
+    subjects.forEach((subject, index) => {
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td>${course.code}</td>
-            <td>${course.name}</td>
-            <td>${course.level || "-"}</td>
-            <td>${course.units || "-"}</td>
-            <td>${course.semester || "-"}</td>
+            <td>${subject.code}</td>
+            <td>${subject.name}</td>
+            <td>${subject.level || "-"}</td>
+            <td>${subject.units || "-"}</td>
+            <td>${subject.semester || "-"}</td>
             <td>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Edit" onclick="editcourse('${course._id}')">
+                    <button class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Edit" onclick="editsubject('${subject._id}')">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete" onclick="deletecourse('${course._id}')">
+                    <button class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete" onclick="deletesubject('${subject._id}')">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -51,9 +51,9 @@ function displaycourses(courses) {
     });
 }
 
-// 🔍 Filter courses by level
-function filtercoursesByLevel(level) {
-    const rows = document.querySelectorAll("#coursesTableBody tr");
+// 🔍 Filter subjects by level
+function filtersubjectsByLevel(level) {
+    const rows = document.querySelectorAll("#subjectsTableBody tr");
     rows.forEach(row => {
         const levelCell = row.cells[2];
         if (!level || (levelCell && levelCell.textContent === level)) {
@@ -64,10 +64,10 @@ function filtercoursesByLevel(level) {
     });
 }
 
-// 🔎 Search courses by course name or code
-function searchcourses(query) {
+// 🔎 Search subjects by subject name or code
+function searchsubjects(query) {
     const term = query.toLowerCase();
-    const rows = document.querySelectorAll("#coursesTableBody tr");
+    const rows = document.querySelectorAll("#subjectsTableBody tr");
 
     rows.forEach(row => {
         const name = row.cells[1]?.textContent?.toLowerCase() || "";
@@ -76,15 +76,15 @@ function searchcourses(query) {
     });
 }
 
-// 🆕 Handle adding a new course
-async function handleAddcourse(e) {
+// 🆕 Handle adding a new subject
+async function handleAddsubject(e) {
     e.preventDefault();
-    setLoading("addcourseBtn", true, "Add Course");
+    setLoading("addsubjectBtn", true, "Add subject");
 
-    const data = getFormData("addcourseForm");
+    const data = getFormData("addsubjectForm");
 
     try {
-        const result = await apiCall("/courses/create", "POST", {
+        const result = await apiCall("/subjects/create", "POST", {
             name: data.name,
             code: data.code,
             level: data.level || "",
@@ -92,47 +92,47 @@ async function handleAddcourse(e) {
             semester: data.semester || "",
         });
 
-        showAlert("Course added successfully!", "success");
-        document.getElementById("addcourseForm").reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById("addcourseModal"));
+        showAlert("subject added successfully!", "success");
+        document.getElementById("addsubjectForm").reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById("addsubjectModal"));
         modal.hide();
-        await loadcourses();
+        await loadsubjects();
     } catch (err) {
-        showAlert("Failed to add course.", "danger");
+        showAlert("Failed to add subject.", "danger");
     } finally {
-        setLoading("addcourseBtn", false, "Add Course");
+        setLoading("addsubjectBtn", false, "Add subject");
     }
 }
 
-// 🗑 Delete course
-async function deletecourse(id) {
-    if (!confirm("Are you sure you want to delete this course?")) return;
+// 🗑 Delete subject
+async function deletesubject(id) {
+    if (!confirm("Are you sure you want to delete this subject?")) return;
 
     try {
-        const res = await apiCall(`/courses/${id}`, "DELETE");
-        showAlert("Course deleted successfully", "success");
-        await loadcourses();
+        const res = await apiCall(`/subjects/${id}`, "DELETE");
+        showAlert("subject deleted successfully", "success");
+        await loadsubjects();
     } catch (err) {
-        showAlert("Failed to delete course", "danger");
+        showAlert("Failed to delete subject", "danger");
     }
 }
 
-// ✏️ Edit course (Not implemented in backend yet)
-function editcourse(id) {
+// ✏️ Edit subject (Not implemented in backend yet)
+function editsubject(id) {
     showAlert("Edit functionality not implemented yet.", "info");
 }
 
-// ⬇️ Export courses to CSV
-function exportcoursesToCSV() {
-    const rows = Array.from(document.querySelectorAll("#coursesTableBody tr"))
+// ⬇️ Export subjects to CSV
+function exportsubjectsToCSV() {
+    const rows = Array.from(document.querySelectorAll("#subjectsTableBody tr"))
         .map(tr => Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim()));
 
-    if (rows.length === 0 || rows[0][0] === "No courses found.") {
-        showAlert("No course data to export", "warning");
+    if (rows.length === 0 || rows[0][0] === "No subjects found.") {
+        showAlert("No subject data to export", "warning");
         return;
     }
 
-    const headers = ["Course Code", "Course Name", "Level", "Credit Units", "Semester"];
+    const headers = ["subject Code", "subject Name", "Level", "Credit Units", "Semester"];
     const csvContent = [headers, ...rows]
         .map(row => row.map(value => `"${value.replace(/"/g, '""')}"`).join(","))
         .join("\n");
@@ -142,7 +142,7 @@ function exportcoursesToCSV() {
 
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "courses.csv");
+    link.setAttribute("download", "subjects.csv");
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();

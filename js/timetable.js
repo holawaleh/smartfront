@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dayInput = document.getElementById('day');
     const startInput = document.getElementById('startTime');
     const endInput = document.getElementById('endTime');
-    const courseInput = document.getElementById('course');
+    const subjectInput = document.getElementById('subject');
     const lecturerInput = document.getElementById('lecturer');
     const roomInput = document.getElementById('room');
     const entryIdInput = document.getElementById('entryId');
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" data-id="${entry.id}">
-                        <div><strong>${escapeHtml(entry.course||'')}</strong></div>
+                        <div><strong>${escapeHtml(entry.subject||'')}</strong></div>
                         <div class="small text-muted">${entry.start} - ${entry.end} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
                         <div class="position-absolute" style="top:6px; right:6px;">
                             <button class="btn btn-sm btn-outline-warning me-1" data-id="${entry.id}" data-action="edit">✎</button>
@@ -130,13 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
             day: dayInput.value,
             start: startInput.value,
             end: endInput.value,
-            course: courseInput.value.trim(),
+            subject: subjectInput.value.trim(),
             lecturer: lecturerInput.value.trim(),
             room: roomInput.value.trim()
         };
 
-        if (!payload.day || !payload.start || !payload.end || !payload.course) {
-            showAlert('Please fill day, time and course', 'warning');
+        if (!payload.day || !payload.start || !payload.end || !payload.subject) {
+            showAlert('Please fill day, time and subject', 'warning');
             return;
         }
 
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayInput.value = entry.day;
                 startInput.value = entry.start;
                 endInput.value = entry.end;
-                courseInput.value = entry.course;
+                subjectInput.value = entry.subject;
                 lecturerInput.value = entry.lecturer;
                 roomInput.value = entry.room;
                 saveBtn.textContent = 'Update Slot';
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const endMin = timeToMinutes(time) + 60;
         const endHour = String(Math.floor(endMin/60)).padStart(2,'0');
         endInput.value = `${endHour}:00`;
-        courseInput.focus();
+        subjectInput.focus();
     });
 
     cancelEditBtn.addEventListener('click', ()=> resetForm());
