@@ -220,4 +220,89 @@ if (captureUidBtn) {
     if (checkAuth()) {
         loadStudents();
     }
+    
+    // === Edit Student Handler (exposed globally for inline onclick) ===
+    // Attach to window so inline `onclick="editStudent(id)"` works
+    window.editStudent = async function (studentId) {
+        if (!studentId) return;
+        if (!checkAuth()) return;
+
+        try {
+            const data = await apiCall(`/students/${studentId}`);
+            const student = data?.student || data;
+            if (!student) throw new Error('Student not found');
+
+            document.getElementById('editStudentId').value = student._id || student.id || '';
+            document.getElementById('editStudentName').value = student.name || '';
+            document.getElementById('editMatricNo').value = student.matricNo || student.matric || '';
+            document.getElementById('editEmail').value = student.email || '';
+            document.getElementById('editLevel').value = student.level || '';
+            document.getElementById('editPhone').value = student.phone || '';
+            document.getElementById('editDepartment').value = student.department || '';
+            document.getElementById('editUid').value = student.uid || '';
+
+            const modalEl = document.getElementById('editStudentModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        } catch (err) {
+            console.error('Edit fetch error:', err);
+            showAlert('Failed to load student for editing', 'danger');
+        }
+    };
+
+    // === Edit Student Form Submit ===
+    const editForm = document.getElementById('editStudentForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!checkAuth()) return;
+
+            const updateBtn = document.getElementById('updateStudentBtn');
+            const updateSpinner = document.getElementById('updateSpinner');
+            updateSpinner.classList.remove('d-none');
+            updateBtn.disabled = true;
+
+            try {
+                const id = document.getElementById('editStudentId').value;
+                const formData = new FormData(editForm);
+                const payload = Object.fromEntries(formData);
+
+                // Remove id from payload if present
+                delete payload.id;
+
+                await apiCall(`/students/${id}`, 'PUT', payload);
+                showAlert('✅ Student updated', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
+                await loadStudents();
+            } catch (err) {
+                console.error('Update error:', err);
+                showAlert('Failed to update student: ' + (err.message || ''), 'danger');
+            } finally {
+                updateSpinner.classList.add('d-none');
+                updateBtn.disabled = false;
+            }
+        });
+    }
+
+    // === Delete Student Handler (exposed globally for inline onclick) ===
+    window.deleteStudent = async function (studentId, studentName) {
+        if (!studentId) return;
+        if (!checkAuth()) return;
+
+        const confirmed = confirm(`Delete ${studentName || 'this student'}? This action cannot be undone.`);
+        if (!confirmed) return;
+
+        try {
+            await apiCall(`/students/${studentId}`, 'DELETE');
+            showAlert('✅ Student deleted', 'success');
+            await loadStudents();
+        } catch (err) {
+            console.error('Delete error:', err);
+            showAlert('Failed to delete student: ' + (err.message || ''), 'danger');
+        }
+    };
+
+    if (checkAuth()) {
+        loadStudents();
+    }
 });
