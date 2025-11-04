@@ -66,8 +66,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Error: ${response.status}`);
+                const errorData = await response.json().catch(() => ({
+                    message: `HTTP Error: ${response.status}`
+                }));
+                console.error('API Error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorData
+                });
+                throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
             }
 
             return await response.json();
@@ -267,13 +274,19 @@ if (captureUidBtn) {
             try {
                 const id = document.getElementById('editStudentId').value;
                 const formData = new FormData(editForm);
-                const payload = Object.fromEntries(formData);
-
-                // Clean up payload
-                delete payload.id;
-                delete payload.editStudentId; // Remove any form field names that don't match backend
+                const formFields = Object.fromEntries(formData);
                 
-                // Ensure required fields
+                // Create clean payload with only the fields backend expects
+                const payload = {
+                    name: formFields.name?.trim(),
+                    matricNo: formFields.matricNo?.trim(),
+                    email: formFields.email?.trim(),
+                    level: formFields.level?.trim(),
+                    phone: formFields.phone?.trim(),
+                    department: formFields.department?.trim()
+                };
+                
+                // Validate required fields
                 if (!payload.name || !payload.matricNo || !payload.email) {
                     throw new Error('Name, Matric Number and Email are required');
                 }
