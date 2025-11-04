@@ -21,6 +21,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const START_HOUR = 8;  // 8 AM
     const END_HOUR = 18;   // 6 PM
 
+    // Predefined pleasant colors for slots
+    const slotColors = [
+        { bg: '#fff3e6', text: '#cc5500' }, // Peach
+        { bg: '#e6f3ff', text: '#0066cc' }, // Sky Blue
+        { bg: '#f3e6ff', text: '#6600cc' }, // Lavender
+        { bg: '#e6ffe6', text: '#008000' }, // Mint
+        { bg: '#ffe6e6', text: '#cc0000' }, // Light Pink
+        { bg: '#fff2e6', text: '#cc6600' }, // Light Orange
+        { bg: '#e6fff2', text: '#00804d' }, // Sea Green
+        { bg: '#ffe6f2', text: '#cc0066' }, // Rose
+        { bg: '#f2ffe6', text: '#408000' }, // Lime
+        { bg: '#e6e6ff', text: '#0000cc' }  // Light Blue
+    ];
+
     // Generate hours array with AM/PM format
     for (let h = START_HOUR; h <= END_HOUR; h++) {
         const ampm = h >= 12 ? 'PM' : 'AM';
@@ -56,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let hours12 = +hours24 % 12;
         hours12 = hours12 || 12; // Convert '0' to '12'
         return `${hours12}:${minutes} ${period}`;
+    }
+
+    function getRandomSlotColor() {
+        return slotColors[Math.floor(Math.random() * slotColors.length)];
     }
 
     function renderGrid() {
@@ -103,12 +121,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
 
-                    rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" data-id="${entry.id}">
+                    const slotColor = entry.color || getRandomSlotColor();
+                    rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" 
+                        data-id="${entry.id}" 
+                        style="background-color: ${slotColor.bg}; color: ${slotColor.text}; transition: transform 0.2s;">
                         <div><strong>${escapeHtml(entry.subject||'')}</strong></div>
-                        <div class="small text-muted">${formatTime24to12(entry.start)} - ${formatTime24to12(entry.end)} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
+                        <div class="small" style="color: ${slotColor.text}88">${formatTime24to12(entry.start)} - ${formatTime24to12(entry.end)} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
                         <div class="position-absolute" style="top:6px; right:6px;">
-                            <button class="btn btn-sm btn-outline-warning me-1" data-id="${entry.id}" data-action="edit">✎</button>
-                            <button class="btn btn-sm btn-outline-danger" data-id="${entry.id}" data-action="delete">🗑</button>
+                            <button class="btn btn-sm me-1" data-id="${entry.id}" data-action="edit" 
+                                style="color: ${slotColor.text}; border-color: ${slotColor.text}88">✎</button>
+                            <button class="btn btn-sm" data-id="${entry.id}" data-action="delete" 
+                                style="color: ${slotColor.text}; border-color: ${slotColor.text}88">🗑</button>
                         </div>
                     </td>`;
                 } else {
@@ -146,7 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             end: endInput.value,
             subject: subjectInput.value.trim(),
             lecturer: lecturerInput.value.trim(),
-            room: roomInput.value.trim()
+            room: roomInput.value.trim(),
+            color: entryIdInput.value ? entries.find(x => x.id === entryIdInput.value)?.color : getRandomSlotColor()
         };
 
         if (!payload.day || !payload.start || !payload.end || !payload.subject) {
