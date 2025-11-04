@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const endMin = timeToMinutes(entry.end) || (startMin + 60);
                     let spanHours = Math.max(1, Math.ceil((endMin - startMin) / 60));
                     // cap span to remaining rows
-                    spanHours = Math.min(spanHours, hours.length - i);
+                    spanHours = Math.min(spanHours, hours.length - hours.findIndex(h => h.value === hour.value));
 
                     // mark occupied for subsequent hours
                     for (let k=0; k<spanHours; k++) {
