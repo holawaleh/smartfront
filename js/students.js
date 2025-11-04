@@ -89,8 +89,10 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         try {
-            const data = await apiCall('/students'); // ✅ GET /api returns students
-            const students = Array.isArray(data) ? data : (data?.data || []);
+            const students = await apiCall('/students');
+            
+            if (!Array.isArray(students)) {
+                throw new Error('Invalid response format from server');
 
             if (students.length === 0) {
                 tbody.innerHTML = `
@@ -228,9 +230,8 @@ if (captureUidBtn) {
         if (!checkAuth()) return;
 
         try {
-            const data = await apiCall(`/students/${studentId}`);
-            const student = data?.student || data;
-            if (!student) throw new Error('Student not found');
+            const student = await apiCall(`/students/${studentId}`);
+            if (!student || !student._id) throw new Error('Student not found');
 
             document.getElementById('editStudentId').value = student._id || student.id || '';
             document.getElementById('editStudentName').value = student.name || '';
@@ -267,8 +268,13 @@ if (captureUidBtn) {
                 const formData = new FormData(editForm);
                 const payload = Object.fromEntries(formData);
 
-                // Remove id from payload if present
+                // Clean up payload
                 delete payload.id;
+                delete payload.editStudentId; // Remove any form field names that don't match backend
+                
+                // Ensure required fields
+                if (!payload.name || !payload.matricNo || !payload.email) {
+                    throw new Error('Name, Matric Number and Email are required');
 
                 await apiCall(`/students/${id}`, 'PUT', payload);
                 showAlert('✅ Student updated', 'success');
