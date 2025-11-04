@@ -144,11 +144,13 @@ async function handleLogin(e) {
         const result = await response.json();
 
         if (response.ok && result.token) {
+            // Store credentials and redirect immediately to reduce perceived delay
             localStorage.setItem(TOKEN_KEY, result.token);
             localStorage.setItem(USER_KEY, JSON.stringify(result.user || { username: formData.username }));
             localStorage.setItem(LOGIN_TIME_KEY, Date.now().toString());
             showAlert("Login successful! Redirecting...", "success");
-            setTimeout(() => (window.location.href = "dashboard.html"), 1000);
+            // immediate redirect (no artificial delay)
+            window.location.href = "dashboard.html";
         } else {
             showAlert(result.message || "Invalid credentials", "danger");
         }
