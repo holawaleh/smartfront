@@ -4,13 +4,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Timetable - Student Management System</title>
+  <title>Timetable - Smart Lecture Attendance Management System</title>
   <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
   <style>
     .small-input {
       max-width: 160px;
+    }
+
+    /* Sticky time column */
+    .table-responsive {
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .timetable-grid th:first-child,
+    .timetable-grid td:first-child {
+      position: sticky;
+      left: 0;
+      background: var(--bs-body-bg);
+      z-index: 1;
+      border-right: 2px solid var(--bs-border-color);
+    }
+
+    .timetable-grid thead th:first-child {
+      z-index: 2;
     }
   </style>
 </head>
@@ -21,7 +40,7 @@
     <div class="container-fluid">
       <a class="navbar-brand" href="dashboard.html">
         <i class="fas fa-graduation-cap me-2"></i>
-        Student Management System
+        Smart Lecture Attendance Management System
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>

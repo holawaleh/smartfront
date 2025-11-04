@@ -16,12 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
 
-    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const hours = [];
-    const START_HOUR = 7; // 07:00
-    const END_HOUR = 19;  // 19:00
+    const START_HOUR = 8;  // 8 AM
+    const END_HOUR = 18;   // 6 PM
+
+    // Generate hours array with AM/PM format
     for (let h = START_HOUR; h <= END_HOUR; h++) {
-        hours.push(String(h).padStart(2,'0') + ':00');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const hour12 = h > 12 ? h - 12 : h;
+        hours.push({
+            label: `${hour12}:00 ${ampm}`,
+            value: String(h).padStart(2,'0') + ':00'
+        });
     }
 
     function loadEntries() {
@@ -43,7 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return hh*60 + (mm||0);
     }
 
-    function formatHourLabel(h) { return String(h).padStart(2,'0') + ':00'; }
+    function formatTime24to12(time24) {
+        const [hours24, minutes] = time24.split(':');
+        const period = +hours24 < 12 ? 'AM' : 'PM';
+        let hours12 = +hours24 % 12;
+        hours12 = hours12 || 12; // Convert '0' to '12'
+        return `${hours12}:${minutes} ${period}`;
+    }
 
     function renderGrid() {
         const entries = loadEntries();
@@ -58,12 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // start building rows
         let rowsHtml = '';
 
-        for (let i=0;i<hours.length;i++) {
-            const hour = hours[i];
-            rowsHtml += `<tr><th scope="row">${hour}</th>`;
+        for (const hour of hours) {
+            rowsHtml += `<tr><th scope="row" class="text-end">${hour.label}</th>`;
 
             for (const day of days) {
-                if (occupied[day][hour]) {
+                if (occupied[day][hour.value]) {
                     // this hour cell is covered by a previous rowspan - skip
                     continue;
                 }
@@ -73,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (e.day !== day) return false;
                     const startMin = timeToMinutes(e.start);
                     const startHour = Math.floor(startMin/60)*60;
-                    return startHour === timeToMinutes(hour);
+                    return startHour === timeToMinutes(hour.value);
                 });
 
                 if (entry) {
@@ -84,14 +96,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     spanHours = Math.min(spanHours, hours.length - i);
 
                     // mark occupied for subsequent hours
-                    for (let k=0;k<spanHours;k++) {
-                        const hLabel = hours[i+k];
-                        occupied[day][hLabel] = true;
+                    for (let k=0; k<spanHours; k++) {
+                        const hourIndex = hours.findIndex(h => h.value === hour.value) + k;
+                        if (hourIndex < hours.length) {
+                            occupied[day][hours[hourIndex].value] = true;
+                        }
                     }
 
                     rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" data-id="${entry.id}">
                         <div><strong>${escapeHtml(entry.subject||'')}</strong></div>
-                        <div class="small text-muted">${entry.start} - ${entry.end} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
+                        <div class="small text-muted">${formatTime24to12(entry.start)} - ${formatTime24to12(entry.end)} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
                         <div class="position-absolute" style="top:6px; right:6px;">
                             <button class="btn btn-sm btn-outline-warning me-1" data-id="${entry.id}" data-action="edit">✎</button>
                             <button class="btn btn-sm btn-outline-danger" data-id="${entry.id}" data-action="delete">🗑</button>
@@ -99,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>`;
                 } else {
                     // empty cell
-                    rowsHtml += `<td data-day="${day}" data-time="${hour}" class="timetable-empty-cell text-center" style="cursor:pointer; height:60px"></td>`;
+                    rowsHtml += `<td data-day="${day}" data-time="${hour.value}" class="timetable-empty-cell text-center" style="cursor:pointer; height:60px"></td>`;
                 }
             }
 
