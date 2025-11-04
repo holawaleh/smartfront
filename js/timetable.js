@@ -1,0 +1,221 @@
+// timetable.js - frontend-only timetable CRUD using localStorage
+
+document.addEventListener('DOMContentLoaded', () => {
+    const STORAGE_KEY = 'timetableEntries';
+
+    const form = document.getElementById('timetableForm');
+    const dayInput = document.getElementById('day');
+    const startInput = document.getElementById('startTime');
+    const endInput = document.getElementById('endTime');
+    const courseInput = document.getElementById('course');
+    const lecturerInput = document.getElementById('lecturer');
+    const roomInput = document.getElementById('room');
+    const entryIdInput = document.getElementById('entryId');
+    const timetableGridBody = document.getElementById('timetableGridBody');
+    const saveBtn = document.getElementById('saveSlotBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const hours = [];
+    const START_HOUR = 7; // 07:00
+    const END_HOUR = 19;  // 19:00
+    for (let h = START_HOUR; h <= END_HOUR; h++) {
+        hours.push(String(h).padStart(2,'0') + ':00');
+    }
+
+    function loadEntries() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY) || '[]';
+            return JSON.parse(raw);
+        } catch (e) {
+            console.error('Failed to parse timetable entries', e);
+            return [];
+        }
+    }
+
+    function saveEntries(entries) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function timeToMinutes(t) {
+        const [hh, mm] = (t||'00:00').split(':').map(Number);
+        return hh*60 + (mm||0);
+    }
+
+    function formatHourLabel(h) { return String(h).padStart(2,'0') + ':00'; }
+
+    function renderGrid() {
+        const entries = loadEntries();
+
+        // Map entries by id for quick lookup
+        const placed = {};
+
+        // create occupancy map to skip cells covered by rowspan
+        const occupied = {};
+        days.forEach(d=> occupied[d] = {});
+
+        // start building rows
+        let rowsHtml = '';
+
+        for (let i=0;i<hours.length;i++) {
+            const hour = hours[i];
+            rowsHtml += `<tr><th scope="row">${hour}</th>`;
+
+            for (const day of days) {
+                if (occupied[day][hour]) {
+                    // this hour cell is covered by a previous rowspan - skip
+                    continue;
+                }
+
+                // find entry that should start at this hour (snap start to hour)
+                const entry = entries.find(e => {
+                    if (e.day !== day) return false;
+                    const startMin = timeToMinutes(e.start);
+                    const startHour = Math.floor(startMin/60)*60;
+                    return startHour === timeToMinutes(hour);
+                });
+
+                if (entry) {
+                    const startMin = timeToMinutes(entry.start);
+                    const endMin = timeToMinutes(entry.end) || (startMin + 60);
+                    let spanHours = Math.max(1, Math.ceil((endMin - startMin) / 60));
+                    // cap span to remaining rows
+                    spanHours = Math.min(spanHours, hours.length - i);
+
+                    // mark occupied for subsequent hours
+                    for (let k=0;k<spanHours;k++) {
+                        const hLabel = hours[i+k];
+                        occupied[day][hLabel] = true;
+                    }
+
+                    rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" data-id="${entry.id}">
+                        <div><strong>${escapeHtml(entry.course||'')}</strong></div>
+                        <div class="small text-muted">${entry.start} - ${entry.end} ${entry.room?(' • '+escapeHtml(entry.room)):''}</div>
+                        <div class="position-absolute" style="top:6px; right:6px;">
+                            <button class="btn btn-sm btn-outline-warning me-1" data-id="${entry.id}" data-action="edit">✎</button>
+                            <button class="btn btn-sm btn-outline-danger" data-id="${entry.id}" data-action="delete">🗑</button>
+                        </div>
+                    </td>`;
+                } else {
+                    // empty cell
+                    rowsHtml += `<td data-day="${day}" data-time="${hour}" class="timetable-empty-cell text-center" style="cursor:pointer; height:60px"></td>`;
+                }
+            }
+
+            rowsHtml += `</tr>`;
+        }
+
+        timetableGridBody.innerHTML = rowsHtml;
+    }
+
+    function escapeHtml(s){
+        if (!s) return '';
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function resetForm() {
+        form.reset();
+        entryIdInput.value = '';
+        cancelEditBtn.classList.add('d-none');
+        saveBtn.textContent = 'Save Slot';
+    }
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const entries = loadEntries();
+
+        const payload = {
+            id: entryIdInput.value || Date.now().toString(),
+            day: dayInput.value,
+            start: startInput.value,
+            end: endInput.value,
+            course: courseInput.value.trim(),
+            lecturer: lecturerInput.value.trim(),
+            room: roomInput.value.trim()
+        };
+
+        if (!payload.day || !payload.start || !payload.end || !payload.course) {
+            showAlert('Please fill day, time and course', 'warning');
+            return;
+        }
+
+        const existing = entries.findIndex(x=>x.id===payload.id);
+        if (existing >= 0) {
+            entries[existing] = payload;
+            showAlert('Slot updated', 'success');
+        } else {
+            entries.push(payload);
+            showAlert('Slot added', 'success');
+        }
+
+        saveEntries(entries);
+        renderGrid();
+        resetForm();
+    });
+
+    // delegate clicks on grid for edit/delete and empty cells
+    timetableGridBody.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button');
+        if (btn) {
+            const id = btn.getAttribute('data-id');
+            const action = btn.getAttribute('data-action');
+            if (!id || !action) return;
+
+            const entries = loadEntries();
+            const idx = entries.findIndex(x=>x.id===id);
+            if (idx < 0) return;
+
+            if (action === 'edit') {
+                const entry = entries[idx];
+                entryIdInput.value = entry.id;
+                dayInput.value = entry.day;
+                startInput.value = entry.start;
+                endInput.value = entry.end;
+                courseInput.value = entry.course;
+                lecturerInput.value = entry.lecturer;
+                roomInput.value = entry.room;
+                saveBtn.textContent = 'Update Slot';
+                cancelEditBtn.classList.remove('d-none');
+                window.scrollTo({top:0, behavior:'smooth'});
+            }
+
+            if (action === 'delete') {
+                if (!confirm('Delete this slot?')) return;
+                entries.splice(idx,1);
+                saveEntries(entries);
+                renderGrid();
+                showAlert('Slot deleted', 'success');
+            }
+
+            return;
+        }
+
+        // empty cell clicked
+        const cell = e.target.closest('td.timetable-empty-cell');
+        if (!cell) return;
+        const day = cell.getAttribute('data-day');
+        const time = cell.getAttribute('data-time');
+        if (!day || !time) return;
+
+        dayInput.value = day;
+        startInput.value = time;
+        // default end time +1 hour
+        const endMin = timeToMinutes(time) + 60;
+        const endHour = String(Math.floor(endMin/60)).padStart(2,'0');
+        endInput.value = `${endHour}:00`;
+        courseInput.focus();
+    });
+
+    cancelEditBtn.addEventListener('click', ()=> resetForm());
+
+    clearAllBtn.addEventListener('click', ()=>{
+        if (!confirm('Clear all timetable slots?')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        renderGrid();
+        showAlert('All slots cleared', 'success');
+    });
+
+    // initial render
+    renderGrid();
+});

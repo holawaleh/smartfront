@@ -100,7 +100,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="subjects.html">
+                        <a class="nav-link" href="timetable.html">
+                            <i class="fas fa-calendar-alt me-1"></i>Timetable
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="courses.html">
                             <i class="fas fa-book me-1"></i>Courses
                         </a>
                     </li>
@@ -167,7 +172,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h4 class="card-title" id="totalSubjects">
+                                <h4 class="card-title" id="totalcourses">
                                     <div class="spinner-border spinner-border-sm loading-spinner" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -234,7 +239,7 @@
                                 </a>
                             </div>
                             <div class="col-md-3">
-                                <a href="subjects.html" class="btn btn-outline-success w-100 quick-action-btn">
+                                <a href="courses.html" class="btn btn-outline-success w-100 quick-action-btn">
                                     <i class="fas fa-plus me-2"></i>
                                     Add Courses
                                 </a>
@@ -382,7 +387,7 @@
         async function loadDashboardData() {
             await Promise.allSettled([
                 loadStudentsCount(),
-                loadSubjectsCount(),
+                loadcoursesCount(),
                 loadLogsCount(),
                 loadRecentActivity()
             ]);
@@ -399,13 +404,13 @@
             }
         }
 
-        async function loadSubjectsCount() {
+        async function loadcoursesCount() {
             try {
-                const data = await apiCall('/subjects');
-                const subjects = Array.isArray(data) ? data : (data?.data || []);
-                document.getElementById("totalSubjects").textContent = subjects.length.toLocaleString();
+                const data = await apiCall('/courses');
+                const courses = Array.isArray(data) ? data : (data?.data || []);
+                document.getElementById("totalcourses").textContent = courses.length.toLocaleString();
             } catch (err) {
-                document.getElementById("totalSubjects").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+                document.getElementById("totalcourses").innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
             }
         }
 
@@ -449,7 +454,7 @@
                                     <strong>${log.studentName || "Unknown"}</strong>
                                     <span class="text-muted ms-2">${log.action || "scanned"}</span>
                                 </div>
-                                ${log.Course ? `<div class="text-muted small ms-4">${log.subject}</div>` : ''}
+                                ${log.Course ? `<div class="text-muted small ms-4">${log.course}</div>` : ''}
                             </div>
                             <small class="text-muted">${formatDateTime(log.createdAt)}</small>
                         </div>

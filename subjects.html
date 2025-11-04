@@ -50,7 +50,9 @@
                                 class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="students.html"><i
                                 class="fas fa-users me-1"></i>Students</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="subjects.html"><i
+                    <li class="nav-item"><a class="nav-link" href="timetable.html"><i
+                                class="fas fa-calendar-alt me-1"></i>Timetable</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="courses.html"><i
                                 class="fas fa-book me-1"></i>Courses</a></li>
                     <li class="nav-item"><a class="nav-link" href="logs.html"><i
                                 class="fas fa-clipboard-list me-1"></i>Scan Logs</a></li>
@@ -76,7 +78,7 @@
         <div class="row mb-4">
             <div class="col-12 d-flex justify-content-between align-items-center">
                 <h2><i class="fas fa-book me-2"></i>Course Management</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addcourseModal">
                     <i class="fas fa-plus me-2"></i>Add Course
                 </button>
             </div>
@@ -87,11 +89,11 @@
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control" placeholder="Search courses..."
-                        onkeyup="searchSubjects(this.value)" />
+                        onkeyup="searchcourses(this.value)" />
                 </div>
             </div>
             <div class="col-md-3">
-                <button class="btn btn-outline-success w-100" onclick="exportSubjectsToCSV()">
+                <button class="btn btn-outline-success w-100" onclick="exportcoursesToCSV()">
                     <i class="fas fa-download me-2"></i>Export CSV
                 </button>
             </div>
@@ -113,7 +115,7 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="subjectsTableBody">
+                                <tbody id="coursesTableBody">
                                     <tr>
                                         <td colspan="3" class="text-center">
                                             <div class="spinner-border"></div> Loading courses...
@@ -129,26 +131,25 @@
     </div>
 
     <!-- Add Course Modal -->
-    <div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="addcourseModal" tabindex="-1" aria-labelledby="addcourseModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="addSubjectForm" class="modal-content">
+            <form id="addcourseForm" class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addSubjectModalLabel">Add New Course</h5>
+                    <h5 class="modal-title" id="addcourseModalLabel">Add New Course</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="subjectCode" class="form-label">Course Code</label>
-                        <input type="text" name="code" id="subjectCode" class="form-control" required />
+                        <label for="courseCode" class="form-label">Course Code</label>
+                        <input type="text" name="code" id="courseCode" class="form-control" required />
                     </div>
                     <div class="mb-3">
-                        <label for="subjectName" class="form-label">Course Name</label>
-                        <input type="text" name="name" id="subjectName" class="form-control" required />
+                        <label for="courseName" class="form-label">Course Name</label>
+                        <input type="text" name="name" id="courseName" class="form-control" required />
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="saveSubjectBtn" type="submit" class="btn btn-primary">
+                    <button id="savecourseBtn" type="submit" class="btn btn-primary">
                         <span id="saveSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
                         Save Course
                     </button>
@@ -158,7 +159,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/subjects.js"></script>
+    <script src="js/courses.js"></script>
     <script src="js/auth.js"></script> <!-- If you store helper functions like apiCall here -->
 </body>
 

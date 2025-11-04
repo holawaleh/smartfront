@@ -26,7 +26,7 @@ async function loadLogs() {
       <tr>
         <td>${formatDateTime(log.createdAt)}</td>
         <td>${log.student?.name || 'Unknown'}</td>
-        <td>${log.subject || '-'}</td>
+        <td>${log.course || '-'}</td>
         <td>${log.student?.uid || 'N/A'}</td>
         <td>
           <span class="badge bg-${log.status === 'success' ? 'success' : 'danger'}">

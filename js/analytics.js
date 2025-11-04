@@ -60,15 +60,15 @@ async function loadAnalyticsData() {
     try {
         showLoadingState();
 
-        const [logsRes, studentsRes, subjectsRes] = await Promise.all([
+        const [logsRes, studentsRes, coursesRes] = await Promise.all([
             apiCall('/logs', 'GET'),
             apiCall('/students', 'GET'),
-            apiCall('/subjects', 'GET')
+            apiCall('/courses', 'GET')
         ]);
 
         analyticsData.logs = logsRes?.data || logsRes || [];
         analyticsData.students = studentsRes?.data || studentsRes || [];
-        analyticsData.courses = subjectsRes?.data || subjectsRes || [];
+        analyticsData.courses = coursesRes?.data || coursesRes || [];
 
         updateCharts();
     } catch (err) {
@@ -138,13 +138,13 @@ function generateWeeklyCourseChart(logs) {
     logs.forEach(log => {
         const date = new Date(log.createdAt || log.timestamp);
         const week = getWeekStart(date).toISOString().split('T')[0];
-        const course = log.subject || 'Unknown';
+        const course = log.course || 'Unknown';
 
         if (!weeklyData[week]) weeklyData[week] = {};
         weeklyData[week][course] = (weeklyData[week][course] || 0) + 1;
     });
 
-    const topCourses = [...new Set(logs.map(log => log.subject || 'Unknown'))].slice(0, 5);
+    const topCourses = [...new Set(logs.map(log => log.course || 'Unknown'))].slice(0, 5);
     const weeks = Object.keys(weeklyData).sort().slice(-6);
     const datasets = topCourses.map((course, i) => ({
         label: course,
@@ -211,13 +211,13 @@ function generateCourseDistributionChart(logs) {
     const ctx = document.getElementById('CourseDistributionChart')?.getContext('2d');
     if (!ctx) return;
 
-    const subjectCounts = {};
+    const courseCounts = {};
     logs.forEach(log => {
-        const subject = log.subject || 'Unknown';
-        subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+        const course = log.course || 'Unknown';
+        courseCounts[course] = (courseCounts[course] || 0) + 1;
     });
 
-    const top = Object.entries(subjectCounts).sort(([, a], [, b]) => b - a).slice(0, 10);
+    const top = Object.entries(courseCounts).sort(([, a], [, b]) => b - a).slice(0, 10);
 
     charts.CourseDistributionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -327,7 +327,7 @@ function generateDepartmentChart(logs) {
 function updateAnalyticsStats(logs) {
     const totalScans = logs.length;
     const students = new Set(logs.map(l => l.studentName || l.matricNo)).size;
-    const courses = new Set(logs.map(l => l.subject)).size;
+    const courses = new Set(logs.map(l => l.course)).size;
 
     const range = getDateRangeFromLogs(logs);
     const days = range ? Math.max(1, Math.ceil((range.end - range.start) / (1000 * 60 * 60 * 24))) : 1;
