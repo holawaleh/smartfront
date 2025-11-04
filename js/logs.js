@@ -17,12 +17,23 @@ async function loadLogs() {
     const res = await apiCall('/logs');
     const data = res.data || res;
 
-    if (!Array.isArray(data) || data.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No logs found</td></tr>`;
+    // Filter to show only RFID scan logs by default (action 'entry' or 'exit' or having a uid)
+    const scansOnly = (data || []).filter(l => {
+      if (!l) return false;
+      const action = (l.action || '').toString().toLowerCase();
+      if (action === 'entry' || action === 'exit') return true;
+      // also include records that explicitly have uid field
+      if (l.uid) return true;
+      return false;
+    });
+    const displayData = scansOnly;
+
+    if (!Array.isArray(displayData) || displayData.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No scan logs found</td></tr>`;
       return;
     }
 
-    tableBody.innerHTML = data.map(log => `
+    tableBody.innerHTML = displayData.map(log => `
       <tr>
         <td>${formatDateTime(log.createdAt)}</td>
         <td>${log.student?.name || 'Unknown'}</td>
