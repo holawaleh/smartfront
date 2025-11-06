@@ -78,27 +78,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderGrid() {
         const entries = loadEntries();
+        
+        // First, add time headers
+        const thead = document.querySelector('.timetable-grid thead tr');
+        thead.innerHTML = '<th style="width:90px">Day</th>';
+        hours.forEach(hour => {
+            thead.innerHTML += `<th>${hour.label}</th>`;
+        });
 
         // Map entries by id for quick lookup
         const placed = {};
 
-        // create occupancy map to skip cells covered by rowspan
+        // create occupancy map to skip cells covered by colspan
         const occupied = {};
-        days.forEach(d=> occupied[d] = {});
+        days.forEach(d => occupied[d] = {});
 
         // start building rows
         let rowsHtml = '';
 
-        for (const hour of hours) {
-            rowsHtml += `<tr><th scope="row" class="text-end">${hour.label}</th>`;
+        // One row per day
+        for (const day of days) {
+            rowsHtml += `<tr><th scope="row">${day}</th>`;
 
-            for (const day of days) {
+            for (const hour of hours) {
                 if (occupied[day][hour.value]) {
-                    // this hour cell is covered by a previous rowspan - skip
+                    // this hour cell is covered by a previous colspan - skip
                     continue;
                 }
 
-                // find entry that should start at this hour (snap start to hour)
+                // find entry that should start at this hour
                 const entry = entries.find(e => {
                     if (e.day !== day) return false;
                     const startMin = timeToMinutes(e.start);
@@ -110,11 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const startMin = timeToMinutes(entry.start);
                     const endMin = timeToMinutes(entry.end) || (startMin + 60);
                     let spanHours = Math.max(1, Math.ceil((endMin - startMin) / 60));
-                    // cap span to remaining rows
+                    // cap span to remaining columns
                     spanHours = Math.min(spanHours, hours.length - hours.findIndex(h => h.value === hour.value));
 
                     // mark occupied for subsequent hours
-                    for (let k=0; k<spanHours; k++) {
+                    for (let k = 0; k < spanHours; k++) {
                         const hourIndex = hours.findIndex(h => h.value === hour.value) + k;
                         if (hourIndex < hours.length) {
                             occupied[day][hours[hourIndex].value] = true;
@@ -122,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const slotColor = entry.color || getRandomSlotColor();
-                    rowsHtml += `<td rowspan="${spanHours}" class="align-middle position-relative timetable-slot" 
+                    rowsHtml += `<td colspan="${spanHours}" class="align-middle position-relative timetable-slot" 
                         data-id="${entry.id}" 
                         style="background-color: ${slotColor.bg}; color: ${slotColor.text}; transition: transform 0.2s;">
                         <div><strong>${escapeHtml(entry.subject||'')}</strong></div>
