@@ -77,11 +77,16 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Matric No</th>
-                                        <th>Email</th>
+                                        <th style="width:70px">S/N</th>
+                                        <th class="sortable" data-sort="name">Name <span class="sort-indicator"></span>
+                                        </th>
+                                        <th class="sortable" data-sort="matricNo">Matric No <span
+                                                class="sort-indicator"></span></th>
+                                        <th class="sortable" data-sort="email">Email <span
+                                                class="sort-indicator"></span></th>
                                         <th>Sex</th>
-                                        <th>Level</th>
+                                        <th class="sortable" data-sort="level">Level <span
+                                                class="sort-indicator"></span></th>
                                         <th>Phone</th>
                                         <th>Department</th>
                                         <th>UID</th>
@@ -90,7 +95,7 @@
                                 </thead>
                                 <tbody id="studentsTableBody">
                                     <tr>
-                                        <td colspan="9" class="text-center">
+                                        <td colspan="10" class="text-center">
                                             <div class="spinner-border" role="status"><span
                                                     class="visually-hidden">Loading...</span></div>
                                             <p class="mt-2">Loading students...</p>
