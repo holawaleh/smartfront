@@ -314,6 +314,15 @@ if (captureUidBtn) {
             document.getElementById('editPhone').value = student.phone || '';
             document.getElementById('editDepartment').value = student.department || '';
             document.getElementById('editUid').value = student.uid || '';
+            // populate local-only sex value
+            try {
+                const key = student.uid || student.matricNo || student._id || '';
+                const sexVal = getSexForStudent(key) || '';
+                const editSexEl = document.getElementById('editSex');
+                if (editSexEl) editSexEl.value = sexVal;
+            } catch (e) {
+                console.warn('Failed to populate edit sex value', e);
+            }
 
             const modalEl = document.getElementById('editStudentModal');
             const modal = new bootstrap.Modal(modalEl);
@@ -371,6 +380,20 @@ if (captureUidBtn) {
                 }
 
                 await apiCall(`/students/${id}`, 'PUT', payload);
+
+                // Persist local-only sex value (do NOT send to backend)
+                try {
+                    const sexValue = formFields.sex || document.getElementById('editSex')?.value || '';
+                    // prefer UID from the edit form, else matricNo
+                    const uidKey = (document.getElementById('editUid')?.value) || formFields.matricNo || '';
+                    if (uidKey) {
+                        if (sexValue) setSexForStudent(uidKey, sexValue);
+                        else setSexForStudent(uidKey, undefined); // remove if empty
+                    }
+                } catch (e) {
+                    console.warn('Failed to persist local sex for student', e);
+                }
+
                 showAlert('✅ Student updated', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
                 await loadStudents();
