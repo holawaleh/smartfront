@@ -5,8 +5,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const API_BASE_URL = 'https://bravetosmart.onrender.com/api';
 
+    const SEX_STORAGE_KEY = 'studentSexMap';
+
     function getAuthToken() {
         return localStorage.getItem('authToken'); 
+    }
+
+    function getSexMap() {
+        try {
+            return JSON.parse(localStorage.getItem(SEX_STORAGE_KEY) || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function setSexForStudent(key, sex) {
+        if (!key) return;
+        const map = getSexMap();
+        if (sex) map[key] = sex;
+        else delete map[key];
+        localStorage.setItem(SEX_STORAGE_KEY, JSON.stringify(map));
+    }
+
+    function getSexForStudent(key) {
+        if (!key) return '';
+        const map = getSexMap();
+        return map[key] || '';
     }
 
     function checkAuth() {
@@ -101,9 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Load Students ===
     async function loadStudents() {
         const tbody = document.getElementById("studentsTableBody");
-        tbody.innerHTML = `
+            tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center">
+                <td colspan="9" class="text-center">
                     <div class="spinner-border"></div> Loading students...
                 </td>
             </tr>
@@ -119,17 +143,22 @@ document.addEventListener("DOMContentLoaded", () => {
             if (students.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No students found</td>
+                        <td colspan="9" class="text-center text-muted">No students found</td>
                     </tr>
                 `;
                 return;
             }
 
-            tbody.innerHTML = students.map(s => `
+            tbody.innerHTML = students.map(s => {
+                // local sex stored by uid or matricNo
+                const key = (s.uid && s.uid !== 'N/A') ? s.uid : (s.matricNo || s.matric || s._id || '');
+                const sex = getSexForStudent(key) || '';
+                return `
                 <tr>
                     <td>${s.name || 'Unknown'}</td>
                     <td>${s.matricNo || s.matric || 'N/A'}</td>
                     <td>${s.email || 'N/A'}</td>
+                    <td>${sex || ''}</td>
                     <td>${s.level || 'N/A'}</td>
                     <td>${s.phone || 'N/A'}</td>
                     <td>${s.department || 'N/A'}</td>
@@ -143,11 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         } catch (err) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-danger">
+                    <td colspan="9" class="text-center text-danger">
                         Failed to load: ${err.message}
                     </td>
                 </tr>
@@ -178,9 +207,31 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error("Please fill all fields");
                 }
 
-                const result = await apiCall('/students/register', 'POST', studentData);
+                // Build payload for backend excluding local-only fields (sex)
+                const backendPayload = {
+                    name: studentData.name,
+                    matricNo: studentData.matricNo,
+                    email: studentData.email,
+                    level: studentData.level,
+                    phone: studentData.phone,
+                    department: studentData.department,
+                    uid: studentData.uid
+                };
+
+                const result = await apiCall('/students/register', 'POST', backendPayload);
 
                 if (result) {
+                    // Save sex locally (do not send to backend)
+                    const sexValue = studentData.sex || '';
+                    // Prefer uid as key, fall back to matricNo, then backend returned student
+                    let key = studentData.uid || studentData.matricNo || '';
+                    if (!key && result.student) {
+                        key = result.student.uid || result.student.matricNo || result.student._id || '';
+                    }
+                    if (sexValue && key) {
+                        setSexForStudent(key, sexValue);
+                    }
+
                     showAlert("✅ Student added!", "success");
                     addStudentForm.reset();
                     bootstrap.Modal.getInstance(document.getElementById("addStudentModal")).hide();

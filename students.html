@@ -80,6 +80,7 @@
                                         <th>Name</th>
                                         <th>Matric No</th>
                                         <th>Email</th>
+                                        <th>Sex</th>
                                         <th>Level</th>
                                         <th>Phone</th>
                                         <th>Department</th>
@@ -89,7 +90,7 @@
                                 </thead>
                                 <tbody id="studentsTableBody">
                                     <tr>
-                                        <td colspan="8" class="text-center">
+                                        <td colspan="9" class="text-center">
                                             <div class="spinner-border" role="status"><span
                                                     class="visually-hidden">Loading...</span></div>
                                             <p class="mt-2">Loading students...</p>
@@ -163,6 +164,14 @@
                                 </div>
                                 <div class="form-text">UID will be automatically captured when you click the button
                                     above</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sex" class="form-label">Sex</label>
+                                <select class="form-select" id="sex" name="sex">
+                                    <option value="">Select Sex</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
                             </div>
                         </div>
                     </div>
